@@ -86,6 +86,44 @@ def parse_dependencies(spec: List[Dict[str, Any]]) -> Dict[str, List[str]]:
     return graph
 
 
+def build_dependency_context(memory: Dict[str, Any], upstream: List[str],
+                             max_len: int = 1200) -> str:
+    """把前置任务的产出拼成下游任务的上下文提示（对应 MM-Agent 的 get_dependency_prompt）。
+
+    模拟专家「不会孤立地解每块，而是把前一步结果作为后一步前提」的连贯推理：
+    遍历 upstream（按依赖顺序），把 memory 中对应节点的输出摘录、拼接为纯文本上下文。
+
+    Args:
+        memory: DAGExecutor 的共享记忆（{节点名: 该节点返回的产物}）。
+        upstream: 当前节点的前置节点名列表（按依赖顺序）。
+        max_len: 单节点摘录最大字符数，防止上下文爆炸。
+    Returns:
+        拼接后的上下文文本；无可用前置产物时返回空串。
+    """
+    if not upstream:
+        return ""
+    blocks: List[str] = []
+    for name in upstream:
+        val = memory.get(name)
+        if val is None:
+            continue
+        if isinstance(val, dict):
+            snippet = "; ".join(f"{k}={_short(v, max_len // 3)}" for k, v in val.items())
+        else:
+            snippet = _short(val, max_len)
+        if snippet:
+            blocks.append(f"【前置任务 {name} 的产物】{snippet}")
+    return "\n".join(blocks)
+
+
+def _short(obj: Any, max_len: int) -> str:
+    """把任意对象转成受长度限制的文本摘要。"""
+    text = obj if isinstance(obj, str) else repr(obj)
+    if len(text) > max_len:
+        text = text[:max_len] + "…(截断)"
+    return text
+
+
 # ─────────────────────────────────────────────────────────────
 # 执行器
 # ─────────────────────────────────────────────────────────────
@@ -158,6 +196,38 @@ class DAGExecutor:
 
     def get_result(self, name: str) -> Dict[str, Any]:
         return self._results.get(name, {})
+
+    def _ancestors(self, node: str) -> List[str]:
+        """求 node 的全部祖先（传递闭包），按拓扑先后排序。"""
+        seen: List[str] = []
+        stack = list(self.graph.get(node, []))
+        while stack:
+            cur = stack.pop()
+            if cur in seen:
+                continue
+            seen.append(cur)
+            stack.extend(self.graph.get(cur, []))
+        # 按依赖图拓扑序输出（先发生的在前）
+        try:
+            order = compute_dag_order(self.graph)
+            seen.sort(key=lambda n: order.index(n) if n in order else len(order))
+        except DAGCycleError:
+            pass
+        return seen
+
+    def context_for(self, node: str, max_len: int = 1200) -> str:
+        """返回节点 node 的「上游上下文」文本（模拟任务间记忆传递）。
+
+        含 node 的全部祖先（传递闭包），而非仅直接依赖，
+        对应 MM-Agent 把「所有前置任务」产物拼进后续提示词的做法。
+        """
+        upstream = self._ancestors(node)
+        if not upstream and node in self._nodes:
+            # 兼容未显式声明依赖但按注册顺序线性执行的情况
+            names = list(self._nodes.keys())
+            idx = names.index(node) if node in names else 0
+            upstream = names[:idx]
+        return build_dependency_context(self.memory, upstream, max_len=max_len)
 
 
 # ─────────────────────────────────────────────────────────────

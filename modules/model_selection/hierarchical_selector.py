@@ -31,6 +31,8 @@ class RankedMethod:
     description: str
     score: float
     reason: str
+    core_idea: str = ""      # 专家选题判断依据（元认知）
+    application: str = ""    # 问题→方法领域映射
 
 
 @dataclass
@@ -107,6 +109,8 @@ class HierarchicalMethodSelector:
                         "method_class": m.get("method_class", ""),
                         "model_id": m.get("model_id"),
                         "keywords": m.get("keywords", []),
+                        "core_idea": m.get("core_idea", ""),
+                        "application": m.get("application", ""),
                     })
                 domain_node["children"].append(sub_node)
             tree.append(domain_node)
@@ -124,6 +128,8 @@ class HierarchicalMethodSelector:
                         "model_id": m.get("model_id"),
                         "description": m.get("description", ""),
                         "keywords": m.get("keywords", []),
+                        "core_idea": m.get("core_idea", ""),
+                        "application": m.get("application", ""),
                         "domain": d.get("domain", ""),
                         "domain_keywords": d_kw,
                         "subdomain": sd.get("subdomain", ""),
@@ -206,6 +212,7 @@ class HierarchicalMethodSelector:
                 method=m["method"], method_class=m["method_class"], model_id=m["model_id"],
                 category=m["method_class"], domain=m["domain"], subdomain=m["subdomain"],
                 description=m["description"], score=round(m["score"], 3), reason=reason,
+                core_idea=m.get("core_idea", ""), application=m.get("application", ""),
             ))
 
         rationale = self._make_rationale(ranked, problem_description)
@@ -238,7 +245,11 @@ class HierarchicalMethodSelector:
                 parts.append("题目为方案评价/排序")
         if not parts:
             parts.append("作为候选方法纳入，建议结合领域知识进一步筛选")
-        return "；".join(parts) + f"。（{m['description']}）"
+        reason_text = "；".join(parts) + f"。（{m['description']}）"
+        # 透出专家级「何时该选它」的判断依据（HMML core_idea 字段）
+        if m.get("core_idea"):
+            reason_text += f" 专家提示：{m['core_idea']}"
+        return reason_text
 
     @staticmethod
     def _make_rationale(ranked: List[RankedMethod], problem: str) -> str:

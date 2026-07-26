@@ -15,6 +15,7 @@ from .dag import (
     compute_dag_order,
     linear_fallback,
     parse_dependencies,
+    build_dependency_context,
     DAGExecutor,
     run_dag,
 )
@@ -24,6 +25,7 @@ __all__ = [
     "compute_dag_order",
     "linear_fallback",
     "parse_dependencies",
+    "build_dependency_context",
     "DAGExecutor",
     "run_dag",
 ]

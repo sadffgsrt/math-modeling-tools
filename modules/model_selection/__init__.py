@@ -17,6 +17,24 @@ from .formula_refiner import (
     FormulaRefiner,
     refine_formulas,
 )
+from .problem_analysis_refiner import (
+    AnalysisRound,
+    AnalysisStage,
+    ProblemAnalysis,
+    ProblemAnalysisRefiner,
+    analyze_problem,
+)
+from .problem_decomposition import (
+    SubTask,
+    Decomposition,
+    ProblemDecomposer,
+    decompose_problem,
+)
+from .expert_pipeline import (
+    ExpertPlan,
+    ExpertPipeline,
+    run_expert_pipeline,
+)
 
 __all__ = [
     "ModelCandidate",
@@ -29,4 +47,16 @@ __all__ = [
     "FormulaRefinement",
     "FormulaRefiner",
     "refine_formulas",
+    "AnalysisRound",
+    "AnalysisStage",
+    "ProblemAnalysis",
+    "ProblemAnalysisRefiner",
+    "analyze_problem",
+    "SubTask",
+    "Decomposition",
+    "ProblemDecomposer",
+    "decompose_problem",
+    "ExpertPlan",
+    "ExpertPipeline",
+    "run_expert_pipeline",
 ]
