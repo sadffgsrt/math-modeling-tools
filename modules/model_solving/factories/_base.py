@@ -184,6 +184,70 @@ def load_tabular(path: str, target_column: str = "target") -> Tuple[List[List[fl
     return X, y, features
 
 
+def load_features(path: str) -> Tuple[List[List[float]], List[str]]:
+    """
+    读取只有特征（无目标列）的 CSV 表格。
+    返回 X 与特征列名。
+    """
+    with open(path, newline="", encoding="utf-8") as f:
+        reader = csv.reader(f)
+        rows = [r for r in reader if any(c.strip() != "" for c in r)]
+    if not rows:
+        raise ValueError(f"CSV 文件为空：{path}")
+    header = rows[0]
+    X: List[List[float]] = []
+    for row in rows[1:]:
+        if len(row) != len(header):
+            continue
+        try:
+            X.append([float(v) for v in row])
+        except ValueError:
+            continue
+    if not X:
+        raise ValueError(f"CSV 解析后无有效数值行：{path}")
+    return X, header
+
+
+def _get_xy(params: Dict[str, Any], target_column: str = "target"
+            ) -> Tuple[List[List[float]], Optional[List[float]], Optional[List[str]]]:
+    """
+    统一解析监督学习任务的数据：优先使用 params 中的 X/y，否则读 data_path CSV。
+    返回 (X, y, features)；无监督任务 y 可为 None。
+    """
+    X = params.get("X")
+    y = params.get("y")
+    if X is not None:
+        X = [[float(v) for v in row] for row in X]
+        features = params.get("features")
+        if features is None:
+            features = [f"x{i}" for i in range(len(X[0]))]
+        if y is not None:
+            y = [float(v) for v in y]
+        return X, y, features
+    data_path = params.get("data_path")
+    if data_path:
+        X, y, features = load_tabular(data_path, target_column=target_column)
+        return X, y, features
+    raise ValueError("需要提供 X/y 参数或 data_path（CSV 文件路径）")
+
+
+def _get_x(params: Dict[str, Any]) -> Tuple[List[List[float]], List[str]]:
+    """
+    统一解析无监督任务的数据：优先使用 params 中的 X，否则读 data_path CSV。
+    """
+    X = params.get("X")
+    if X is not None:
+        X = [[float(v) for v in row] for row in X]
+        features = params.get("features")
+        if features is None:
+            features = [f"x{i}" for i in range(len(X[0]))]
+        return X, features
+    data_path = params.get("data_path")
+    if data_path:
+        return load_features(data_path)
+    raise ValueError("需要提供 X 参数或 data_path（CSV 文件路径）")
+
+
 # ════════════════════════════════════════════════════════════════════
 # 3. 抽象基类
 # ════════════════════════════════════════════════════════════════════

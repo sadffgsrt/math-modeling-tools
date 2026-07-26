@@ -1,16 +1,15 @@
 """
 降维类模型求解器（category: dimension_reduction）
-真实实现（纯 Python）：PCA（协方差矩阵 + 幂迭代求主成分）。
-因子分析需要 sklearn，诚实声明未实现。
+真实实现：PCA（协方差矩阵 + 幂迭代求主成分，纯 Python）；
+因子分析（sklearn 包装）。
 """
 from __future__ import annotations
 
-import csv
 import math
 import random
 from typing import Any, Dict, List
 
-from ._base import BaseModelSolver, register_category, _matvec
+from ._base import BaseModelSolver, _get_x, _matvec, register_category
 
 
 def _power_iteration(C: List[List[float]], n: int) -> tuple:
@@ -39,26 +38,11 @@ class DimensionReductionSolver(BaseModelSolver):
         if self.model_id == "pca":
             return self._pca(**params)
         if self.model_id == "factor_analysis":
-            raise NotImplementedError(
-                "模型 factor_analysis 在恢复版尚未实现（需要 sklearn 库，当前环境未安装）"
-            )
+            return self._factor_analysis(**params)
         raise NotImplementedError(f"模型 {self.model_id} 在恢复版尚未实现")
 
     def _pca(self, **params: Any) -> Dict[str, Any]:
-        data_path = params.get("data_path")
-        if not data_path:
-            raise ValueError("PCA 需要提供 data_path（CSV 特征表）")
-        with open(data_path, newline="", encoding="utf-8") as f:
-            rows = [r for r in csv.reader(f) if any(c.strip() for c in r)]
-        rows = rows[1:] if rows else []
-        X = []
-        for row in rows:
-            try:
-                X.append([float(v) for v in row])
-            except ValueError:
-                continue
-        if not X:
-            raise ValueError("CSV 解析后无有效数值行")
+        X, _ = _get_x(params)
         n = len(X)
         p = len(X[0])
         k = min(int(params.get("n_components", 2)), p)
@@ -98,6 +82,34 @@ class DimensionReductionSolver(BaseModelSolver):
             "n_components": k,
             "explained_variance_ratio": [round(e, 6) for e in explained],
             "components": [[round(float(v), 6) for v in comp] for comp in components],
+            "transformed": [[round(float(v), 6) for v in row] for row in transformed],
+        }
+
+    def _factor_analysis(self, **params: Any) -> Dict[str, Any]:
+        """因子分析：sklearn FactorAnalysis 包装。"""
+        try:
+            from sklearn.decomposition import FactorAnalysis
+        except ImportError as e:
+            raise NotImplementedError(
+                "因子分析需要 sklearn 库，当前环境未安装"
+            ) from e
+
+        X, features = _get_x(params)
+        n_components = int(params.get("n_components", 2))
+        n_components = min(n_components, len(features))
+        model = FactorAnalysis(n_components=n_components, random_state=42)
+        transformed = model.fit_transform(X)
+
+        return {
+            "model_category": "dimension_reduction",
+            "model_id": "factor_analysis",
+            "model_name": self.model_name,
+            "method": "sklearn.decomposition.FactorAnalysis",
+            "status": "success",
+            "n_components": n_components,
+            "n_features": len(features),
+            "features": features,
+            "log_likelihood": round(float(model.loglike_[-1]) if hasattr(model, "loglike_") and len(model.loglike_) else 0.0, 6),
             "transformed": [[round(float(v), 6) for v in row] for row in transformed],
         }
 

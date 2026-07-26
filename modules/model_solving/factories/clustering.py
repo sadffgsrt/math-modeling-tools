@@ -1,15 +1,13 @@
 """
 聚类类模型求解器（category: clustering）
-真实实现（纯 Python）：K-means（Lloyd 算法）。
-DBSCAN / 聚类分析需要 sklearn，诚实声明未实现。
+真实实现：K-means（纯 Python Lloyd 算法）、DBSCAN / 聚类分析（sklearn 包装）。
 """
 from __future__ import annotations
 
-import csv
 import random
 from typing import Any, Dict, List
 
-from ._base import BaseModelSolver, register_category
+from ._base import BaseModelSolver, _get_x, register_category
 
 
 def _dist(a: List[float], b: List[float]) -> float:
@@ -25,26 +23,11 @@ class ClusteringSolver(BaseModelSolver):
         if self.model_id == "kmeans":
             return self._kmeans(**params)
         if self.model_id in ("dbscan", "cluster_analysis"):
-            raise NotImplementedError(
-                f"模型 {self.model_id} 在恢复版尚未实现（需要 sklearn 库，当前环境未安装）"
-            )
+            return self._sklearn_clustering(**params)
         raise NotImplementedError(f"模型 {self.model_id} 在恢复版尚未实现")
 
     def _kmeans(self, **params: Any) -> Dict[str, Any]:
-        data_path = params.get("data_path")
-        if not data_path:
-            raise ValueError("K-means 需要提供 data_path（CSV 特征表）")
-        with open(data_path, newline="", encoding="utf-8") as f:
-            rows = [r for r in csv.reader(f) if any(c.strip() for c in r)]
-        header = rows[0]
-        X = []
-        for row in rows[1:]:
-            try:
-                X.append([float(v) for v in row])
-            except ValueError:
-                continue
-        if not X:
-            raise ValueError("CSV 解析后无有效数值行")
+        X, _ = _get_x(params)
         n = len(X)
         k = int(params.get("n_clusters", 3))
         max_iter = int(params.get("max_iter", 100))
@@ -87,6 +70,58 @@ class ClusteringSolver(BaseModelSolver):
             "labels": labels,
             "centroids": [[round(float(v), 6) for v in c] for c in centroids],
             "inertia": round(float(inertia), 6),
+        }
+
+    def _sklearn_clustering(self, **params: Any) -> Dict[str, Any]:
+        """DBSCAN 与聚类分析（KMeans + Agglomerative + 轮廓系数）的 sklearn 包装。"""
+        try:
+            from sklearn import cluster as sk_cluster
+            from sklearn import metrics
+        except ImportError as e:
+            raise NotImplementedError(
+                f"模型 {self.model_id} 需要 sklearn 库，当前环境未安装"
+            ) from e
+
+        X, features = _get_x(params)
+
+        if self.model_id == "dbscan":
+            eps = float(params.get("eps", 0.5))
+            min_samples = int(params.get("min_samples", 5))
+            model = sk_cluster.DBSCAN(eps=eps, min_samples=min_samples)
+            labels = model.fit_predict(X)
+            n_clusters = len(set(labels)) - (1 if -1 in labels else 0)
+            noise = int(sum(1 for v in labels if v == -1))
+            silhouette = None
+            if n_clusters >= 2:
+                silhouette = round(metrics.silhouette_score(X, labels), 6)
+            return {
+                "model_category": "clustering",
+                "model_id": "dbscan",
+                "model_name": self.model_name,
+                "method": "sklearn.cluster.DBSCAN",
+                "status": "success",
+                "n_clusters": n_clusters,
+                "noise_points": noise,
+                "labels": labels.tolist(),
+                "silhouette_score": silhouette,
+            }
+
+        # cluster_analysis：同时运行 KMeans 与 Agglomerative，返回对比摘要
+        k = int(params.get("n_clusters", 3))
+        kmeans = sk_cluster.KMeans(n_clusters=k, random_state=42, n_init="auto")
+        agg = sk_cluster.AgglomerativeClustering(n_clusters=k)
+        labels_km = kmeans.fit_predict(X)
+        labels_agg = agg.fit_predict(X)
+        return {
+            "model_category": "clustering",
+            "model_id": "cluster_analysis",
+            "model_name": self.model_name,
+            "method": "sklearn.KMeans+AglomerativeClustering",
+            "status": "success",
+            "n_clusters": k,
+            "kmeans_labels": labels_km.tolist(),
+            "agglomerative_labels": labels_agg.tolist(),
+            "kmeans_inertia": round(float(kmeans.inertia_), 6),
         }
 
 

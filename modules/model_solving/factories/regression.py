@@ -1,13 +1,13 @@
 """
 回归类模型求解器（category: regression）
-真实实现的纯 Python 算法：普通最小二乘(OLS)、岭回归(Ridge)、Lasso(坐标下降)。
-其余（SVR / XGBoost / LightGBM / CatBoost）需要 sklearn 或专用库，诚实声明未实现。
+真实实现：普通最小二乘(OLS)、岭回归(Ridge)、Lasso(坐标下降)（纯 Python）；
+SVR（sklearn）；XGBoost / LightGBM / CatBoost 优先使用原库，缺失时用 sklearn 梯度提升回退。
 """
 from __future__ import annotations
 
 from typing import Any, Dict, List, Tuple
 
-from ._base import BaseModelSolver, load_tabular, _matmul, _transpose, _matvec, _solve, _r2, register_category
+from ._base import BaseModelSolver, _get_xy, _matmul, _transpose, _matvec, _solve, _r2, register_category
 
 
 def _ols(X: List[List[float]], y: List[float], fit_intercept: bool = True) -> Tuple[List[float], float]:
@@ -92,19 +92,19 @@ class RegressionSolver(BaseModelSolver):
     model_category = "regression"
 
     def solve(self, **params: Any) -> Dict[str, Any]:
-        # 需要外部库的模型：诚实声明未实现
         if self.model_id in ("svr", "xgboost", "lightgbm", "catboost"):
-            raise NotImplementedError(
-                f"模型 {self.model_id} 在恢复版尚未实现"
-                f"（需要 sklearn/specialized 库，当前环境未安装）"
-            )
+            return self._supervised_regression(**params)
 
         data_path = params.get("data_path")
-        if not data_path:
-            raise ValueError("回归求解需要提供 data_path 参数（CSV 路径，需含 'target' 列）")
-
-        target_column = params.get("target_column", "target")
-        X, y, features = load_tabular(data_path, target_column=target_column)
+        X = params.get("X")
+        if X is not None:
+            X = [[float(v) for v in row] for row in X]
+            y = [float(v) for v in params["y"]]
+            features = params.get("features") or [f"x{i}" for i in range(len(X[0]))]
+        elif data_path:
+            X, y, features = _get_xy(params, target_column=params.get("target_column", "target"))
+        else:
+            raise ValueError("回归求解需要提供 data_path 参数（CSV 路径，需含 'target' 列）或 X/y 参数")
 
         if self.model_id == "regression":
             beta, r2 = _ols(X, y, fit_intercept=True)
@@ -130,6 +130,66 @@ class RegressionSolver(BaseModelSolver):
             "coefficients": coefficients,
             "n_samples": len(X),
             "n_features": len(features),
+            "status": "success",
+        }
+
+    def _supervised_regression(self, **params: Any) -> Dict[str, Any]:
+        """
+        SVR / XGBoost / LightGBM / CatBoost 的统一实现。
+        优先使用对应专用库；缺失时以 sklearn 等价模型回退，保证不编造结果。
+        """
+        X, y, features = _get_xy(params, target_column=params.get("target_column", "target"))
+
+        model_id = self.model_id
+        if model_id == "svr":
+            try:
+                from sklearn.svm import SVR
+                model = SVR(kernel=params.get("kernel", "rbf"))
+                method = "sklearn.svm.SVR"
+            except ImportError as e:
+                raise NotImplementedError("SVR 需要 sklearn 库，当前环境未安装") from e
+        elif model_id in ("xgboost", "lightgbm", "catboost"):
+            # 尝试专用库
+            lib_map = {
+                "xgboost": ("xgboost", "XGBRegressor"),
+                "lightgbm": ("lightgbm", "LGBMRegressor"),
+                "catboost": ("catboost", "CatBoostRegressor"),
+            }
+            lib_name, cls_name = lib_map[model_id]
+            try:
+                lib = __import__(lib_name, fromlist=[cls_name])
+                ModelClass = getattr(lib, cls_name)
+                kwargs = {"random_state": 42} if model_id in ("xgboost", "lightgbm") else {}
+                model = ModelClass(**kwargs)
+                method = f"{lib_name}.{cls_name}"
+            except ImportError:
+                # 回退到 sklearn 梯度提升或随机森林
+                from sklearn import ensemble
+                if model_id == "xgboost":
+                    model = ensemble.GradientBoostingRegressor(random_state=42)
+                    method = "sklearn.GradientBoostingRegressor(fallback_for_xgboost)"
+                elif model_id == "lightgbm":
+                    model = ensemble.GradientBoostingRegressor(random_state=42)
+                    method = "sklearn.GradientBoostingRegressor(fallback_for_lightgbm)"
+                else:  # catboost
+                    model = ensemble.RandomForestRegressor(n_estimators=100, random_state=42)
+                    method = "sklearn.RandomForestRegressor(fallback_for_catboost)"
+        else:
+            raise NotImplementedError(f"模型 {model_id} 在恢复版尚未实现")
+
+        model.fit(X, y)
+        yhat = model.predict(X)
+        r2 = _r2(y, yhat)
+
+        return {
+            "model_category": "regression",
+            "model_id": model_id,
+            "model_name": self.model_name,
+            "method": method,
+            "r2": round(float(r2), 6),
+            "n_samples": len(X),
+            "n_features": len(features),
+            "features": features,
             "status": "success",
         }
 

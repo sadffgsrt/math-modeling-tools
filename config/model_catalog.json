@@ -92,7 +92,7 @@
           ],
           "complexity": "medium",
           "python_library": "scipy.optimize.dual_annealing",
-          "implemented": false
+          "implemented": true
         }
       ]
     },
@@ -238,7 +238,7 @@
           ],
           "complexity": "high",
           "python_library": "tensorflow.keras / pytorch",
-          "implemented": false
+          "implemented": true
         },
         {
           "id": "prophet",
@@ -260,7 +260,7 @@
           ],
           "complexity": "low",
           "python_library": "prophet",
-          "implemented": false
+          "implemented": true
         }
       ]
     },
@@ -373,7 +373,7 @@
           ],
           "complexity": "medium",
           "python_library": "sklearn.svm",
-          "implemented": false
+          "implemented": true
         },
         {
           "id": "xgboost",
@@ -395,7 +395,7 @@
           ],
           "complexity": "medium",
           "python_library": "xgboost",
-          "implemented": false
+          "implemented": true
         },
         {
           "id": "lightgbm",
@@ -413,7 +413,7 @@
           ],
           "complexity": "medium",
           "python_library": "lightgbm",
-          "implemented": false
+          "implemented": true
         },
         {
           "id": "catboost",
@@ -430,7 +430,7 @@
           ],
           "complexity": "medium",
           "python_library": "catboost",
-          "implemented": false
+          "implemented": true
         }
       ]
     },
@@ -468,7 +468,7 @@
           ],
           "complexity": "medium",
           "python_library": "sklearn.svm",
-          "implemented": false
+          "implemented": true
         },
         {
           "id": "decision_tree",
@@ -484,7 +484,7 @@
           ],
           "complexity": "low",
           "python_library": "sklearn.tree",
-          "implemented": false
+          "implemented": true
         },
         {
           "id": "random_forest",
@@ -500,7 +500,7 @@
           ],
           "complexity": "medium",
           "python_library": "sklearn.ensemble",
-          "implemented": false
+          "implemented": true
         },
         {
           "id": "knn",
@@ -520,7 +520,7 @@
           ],
           "complexity": "low",
           "python_library": "sklearn.neighbors",
-          "implemented": false
+          "implemented": true
         }
       ]
     },
@@ -558,7 +558,7 @@
           ],
           "complexity": "medium",
           "python_library": "sklearn.cluster",
-          "implemented": false
+          "implemented": true
         },
         {
           "id": "cluster_analysis",
@@ -579,7 +579,7 @@
           ],
           "complexity": "medium",
           "python_library": "sklearn.cluster",
-          "implemented": false
+          "implemented": true
         }
       ]
     },
@@ -623,7 +623,7 @@
           ],
           "complexity": "medium",
           "python_library": "sklearn.decomposition",
-          "implemented": false
+          "implemented": true
         }
       ]
     },
@@ -800,7 +800,7 @@
           ],
           "complexity": "medium",
           "python_library": "numpy.random / 自定义实现",
-          "implemented": false
+          "implemented": true
         },
         {
           "id": "cellular_automata",
@@ -897,7 +897,7 @@
           ],
           "complexity": "medium",
           "python_library": "pysd",
-          "implemented": false
+          "implemented": true
         },
         {
           "id": "discrete_event",
@@ -979,7 +979,7 @@
           ],
           "complexity": "medium",
           "python_library": "sklearn.neural_network",
-          "implemented": false
+          "implemented": true
         },
         {
           "id": "cnn",
@@ -995,7 +995,7 @@
           ],
           "complexity": "high",
           "python_library": "tensorflow",
-          "implemented": false
+          "implemented": true
         },
         {
           "id": "neural_network",
@@ -1017,7 +1017,7 @@
           ],
           "complexity": "high",
           "python_library": "tensorflow / pytorch / sklearn.neural_network",
-          "implemented": false
+          "implemented": true
         }
       ]
     },
@@ -1078,7 +1078,7 @@
           ],
           "complexity": "medium",
           "python_library": "scikit-fuzzy",
-          "implemented": false
+          "implemented": true
         },
         {
           "id": "fuzzy_clustering",
@@ -1095,7 +1095,7 @@
           ],
           "complexity": "medium",
           "python_library": "scikit-fuzzy",
-          "implemented": false
+          "implemented": true
         }
       ]
     }

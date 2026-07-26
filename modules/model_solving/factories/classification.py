@@ -1,14 +1,13 @@
 """
 分类类模型求解器（category: classification）
-真实实现（纯 Python）：逻辑回归（梯度下降）。
-SVM / 决策树 / 随机森林 / KNN 需要 sklearn，诚实声明未实现。
+真实实现：逻辑回归（纯 Python 梯度下降）、SVM / 决策树 / 随机森林 / KNN（sklearn 包装）。
 """
 from __future__ import annotations
 
 import math
 from typing import Any, Dict
 
-from ._base import BaseModelSolver, load_tabular
+from ._base import BaseModelSolver, _get_xy, register_category
 
 
 def _sigmoid(z: float) -> float:
@@ -28,19 +27,11 @@ class ClassificationSolver(BaseModelSolver):
         if self.model_id == "logistic_regression":
             return self._logistic(**params)
         if self.model_id in ("svm", "decision_tree", "random_forest", "knn"):
-            raise NotImplementedError(
-                f"模型 {self.model_id} 在恢复版尚未实现"
-                f"（需要 sklearn 库，当前环境未安装）"
-            )
+            return self._sklearn_classifier(**params)
         raise NotImplementedError(f"模型 {self.model_id} 在恢复版尚未实现")
 
     def _logistic(self, **params: Any) -> Dict[str, Any]:
-        data_path = params.get("data_path")
-        if not data_path:
-            raise ValueError("逻辑回归需要提供 data_path（CSV，需含 'target' 列，取值 0/1）")
-        target_column = params.get("target_column", "target")
-        X, y, features = load_tabular(data_path, target_column=target_column)
-
+        X, y, features = _get_xy(params, target_column=params.get("target_column", "target"))
         # 二值化目标
         yb = [1 if v > 0.5 else 0 for v in y]
         n = len(X)
@@ -83,3 +74,49 @@ class ClassificationSolver(BaseModelSolver):
             "intercept": round(float(b), 6),
             "n_samples": n,
         }
+
+    def _sklearn_classifier(self, **params: Any) -> Dict[str, Any]:
+        """统一使用 sklearn 实现 SVM / 决策树 / 随机森林 / KNN。"""
+        try:
+            from sklearn import svm as sk_svm
+            from sklearn import tree, ensemble, neighbors
+        except ImportError as e:
+            raise NotImplementedError(
+                f"模型 {self.model_id} 需要 sklearn 库，当前环境未安装"
+            ) from e
+
+        X, y, features = _get_xy(params, target_column=params.get("target_column", "target"))
+        y_int = [int(v) for v in y]
+
+        model_map = {
+            "svm": sk_svm.SVC(kernel=params.get("kernel", "rbf"), probability=False, random_state=42),
+            "decision_tree": tree.DecisionTreeClassifier(max_depth=params.get("max_depth"), random_state=42),
+            "random_forest": ensemble.RandomForestClassifier(
+                n_estimators=int(params.get("n_estimators", 100)),
+                max_depth=params.get("max_depth"),
+                random_state=42,
+            ),
+            "knn": neighbors.KNeighborsClassifier(n_neighbors=int(params.get("n_neighbors", 5))),
+        }
+        model = model_map[self.model_id]
+        model.fit(X, y_int)
+        preds = model.predict(X)
+        acc = sum(1 for a, b in zip(preds, y_int) if a == b) / len(y_int)
+
+        result: Dict[str, Any] = {
+            "model_category": "classification",
+            "model_id": self.model_id,
+            "model_name": self.model_name,
+            "method": f"sklearn.{self.model_id}",
+            "status": "success",
+            "accuracy": round(float(acc), 6),
+            "n_samples": len(X),
+            "n_features": len(features),
+            "features": features,
+        }
+        if self.model_id == "svm" and hasattr(model, "support_"):
+            result["support_vectors_count"] = int(model.support_.shape[0])
+        return result
+
+
+register_category("classification", ClassificationSolver)

@@ -959,38 +959,35 @@ class TestAdvancedModels(TestCase):
         self.assertEqual(r["status"], "success")
         self.assertLess(r["best_value"], 5.0)
 
-    # ─── 神经网络类（整体未实现） ───
-    @pytest.mark.xfail(
-        reason="恢复版 solve 抛 NotImplementedError：mlp 未真正实现（需 sklearn.neural_network/tensorflow）",
-        raises=NotImplementedError,
-    )
+    # ─── 神经网络类（恢复版已用 sklearn / 简化 CNN 实现） ───
     def test_mlp(self):
-        r = self.factory.solve("mlp", data=np.zeros((10, 4)))
+        r = self.factory.solve("mlp", X=np.zeros((10, 4)).tolist(), y=[0, 0, 1, 1, 1, 1, 0, 0, 1, 1])
         self.assertEqual(r["status"], "success")
 
-    @pytest.mark.xfail(
-        reason="恢复版 solve 抛 NotImplementedError：cnn 未真正实现（需 tensorflow）",
-        raises=NotImplementedError,
-    )
-    def test_cnn_degrades_gracefully(self):
-        r = self.factory.solve("cnn", data=np.zeros((10, 4)))
+    def test_cnn_feature_extraction(self):
+        image = np.random.rand(8, 8).tolist()
+        r = self.factory.solve("cnn", image=image)
         self.assertEqual(r["status"], "success")
+        self.assertGreater(r["feature_dim"], 0)
 
-    # ─── 模糊逻辑类（整体未实现） ───
-    @pytest.mark.xfail(
-        reason="恢复版 solve 抛 NotImplementedError：fuzzy_inference 未真正实现（需 scikit-fuzzy）",
-        raises=NotImplementedError,
-    )
+    # ─── 模糊逻辑类（恢复版已用纯 Python 实现） ───
     def test_fuzzy_inference(self):
-        r = self.factory.solve("fuzzy_inference", rules=[])
+        r = self.factory.solve(
+            "fuzzy_inference",
+            variables={
+                "temperature": {"low": (0, 0, 20), "medium": (10, 25, 40), "high": (30, 50, 50)},
+            },
+            rules=[
+                ([("temperature", "high", False)], "cooling_strong"),
+                ([("temperature", "medium", False)], "cooling_weak"),
+            ],
+            output_terms={"cooling_strong": (50, 100, 100), "cooling_weak": (0, 30, 60)},
+            inputs={"temperature": 35},
+        )
         self.assertEqual(r["status"], "success")
 
-    @pytest.mark.xfail(
-        reason="恢复版 solve 抛 NotImplementedError：fuzzy_clustering 未真正实现（需 scikit-fuzzy）",
-        raises=NotImplementedError,
-    )
     def test_fuzzy_clustering(self):
-        r = self.factory.solve("fuzzy_clustering", data=np.zeros((20, 3)))
+        r = self.factory.solve("fuzzy_clustering", X=np.zeros((20, 3)).tolist(), n_clusters=2)
         self.assertEqual(r["status"], "success")
 
     # ─── 仿真中未实现部分（需 nashpy/mesa/simpy） ───
@@ -1092,33 +1089,21 @@ class TestV331NewModels(TestCase):
         with self.assertRaises(ValueError):
             self.factory.solve("grey_prediction", series=np.array([1, 2, 3]), forecast_steps=2)
 
-    @pytest.mark.xfail(
-        reason="恢复版 solve 抛 NotImplementedError：lstm 未真正实现（需 tensorflow.keras）",
-        raises=NotImplementedError,
-    )
-    def test_lstm_degrades_gracefully(self):
+    def test_lstm(self):
         np.random.seed(42)
         series = np.sin(np.linspace(0, 10, 30)) + np.random.randn(30) * 0.1
         result = self.factory.solve("lstm", series=series, forecast_steps=3, look_back=5)
         self.assertEqual(result["status"], "success")
 
-    @pytest.mark.xfail(
-        reason="恢复版 solve 抛 NotImplementedError：prophet 未真正实现（需 prophet 库）",
-        raises=NotImplementedError,
-    )
-    def test_prophet_degrades_gracefully(self):
+    def test_prophet(self):
         np.random.seed(42)
         series = np.cumsum(np.random.randn(20)) + 10
         result = self.factory.solve("prophet", series=series, forecast_steps=3)
         self.assertEqual(result["status"], "success")
 
-    @pytest.mark.xfail(
-        reason="恢复版 solve 抛 NotImplementedError：prophet 未真正实现（连短序列校验都不达，缺依赖）",
-        raises=NotImplementedError,
-    )
     def test_prophet_too_short(self):
         with self.assertRaises(ValueError):
-            self.factory.solve("prophet", series=np.array([1, 2, 3, 4, 5]), forecast_steps=2)
+            self.factory.solve("prophet", series=np.array([1, 2, 3, 4]), forecast_steps=2)
 
     def test_grey_relational(self):
         decision_matrix = np.array([
