@@ -92,7 +92,7 @@
           ],
           "complexity": "medium",
           "python_library": "scipy.optimize.dual_annealing",
-          "implemented": true
+          "implemented": false
         }
       ]
     },
@@ -238,7 +238,7 @@
           ],
           "complexity": "high",
           "python_library": "tensorflow.keras / pytorch",
-          "implemented": true
+          "implemented": false
         },
         {
           "id": "prophet",
@@ -260,7 +260,7 @@
           ],
           "complexity": "low",
           "python_library": "prophet",
-          "implemented": true
+          "implemented": false
         }
       ]
     },
@@ -321,9 +321,17 @@
           "id": "ridge",
           "name": "岭回归",
           "description": "L2 正则化回归，处理多重共线性",
-          "applicable_scenarios": ["高维回归", "共线性数据"],
-          "pros": ["缓解过拟合", "稳定数值"],
-          "cons": ["有偏估计"],
+          "applicable_scenarios": [
+            "高维回归",
+            "共线性数据"
+          ],
+          "pros": [
+            "缓解过拟合",
+            "稳定数值"
+          ],
+          "cons": [
+            "有偏估计"
+          ],
           "complexity": "low",
           "python_library": "sklearn.linear_model",
           "implemented": true
@@ -332,9 +340,17 @@
           "id": "lasso",
           "name": "Lasso回归",
           "description": "L1 正则化回归，可实现特征选择",
-          "applicable_scenarios": ["稀疏特征", "特征选择"],
-          "pros": ["特征选择", "稀疏解"],
-          "cons": ["对参数敏感"],
+          "applicable_scenarios": [
+            "稀疏特征",
+            "特征选择"
+          ],
+          "pros": [
+            "特征选择",
+            "稀疏解"
+          ],
+          "cons": [
+            "对参数敏感"
+          ],
           "complexity": "low",
           "python_library": "sklearn.linear_model",
           "implemented": true
@@ -343,12 +359,21 @@
           "id": "svr",
           "name": "支持向量回归(SVR)",
           "description": "基于支持向量的非线性回归方法",
-          "applicable_scenarios": ["非线性回归", "小样本"],
-          "pros": ["泛化好", "核函数灵活"],
-          "cons": ["大规模数据慢", "参数调优难"],
+          "applicable_scenarios": [
+            "非线性回归",
+            "小样本"
+          ],
+          "pros": [
+            "泛化好",
+            "核函数灵活"
+          ],
+          "cons": [
+            "大规模数据慢",
+            "参数调优难"
+          ],
           "complexity": "medium",
           "python_library": "sklearn.svm",
-          "implemented": true
+          "implemented": false
         },
         {
           "id": "xgboost",
@@ -370,7 +395,7 @@
           ],
           "complexity": "medium",
           "python_library": "xgboost",
-          "implemented": true
+          "implemented": false
         },
         {
           "id": "lightgbm",
@@ -388,7 +413,7 @@
           ],
           "complexity": "medium",
           "python_library": "lightgbm",
-          "implemented": true
+          "implemented": false
         },
         {
           "id": "catboost",
@@ -405,7 +430,7 @@
           ],
           "complexity": "medium",
           "python_library": "catboost",
-          "implemented": true
+          "implemented": false
         }
       ]
     },
@@ -443,7 +468,7 @@
           ],
           "complexity": "medium",
           "python_library": "sklearn.svm",
-          "implemented": true
+          "implemented": false
         },
         {
           "id": "decision_tree",
@@ -459,7 +484,7 @@
           ],
           "complexity": "low",
           "python_library": "sklearn.tree",
-          "implemented": true
+          "implemented": false
         },
         {
           "id": "random_forest",
@@ -475,7 +500,7 @@
           ],
           "complexity": "medium",
           "python_library": "sklearn.ensemble",
-          "implemented": true
+          "implemented": false
         },
         {
           "id": "knn",
@@ -495,7 +520,7 @@
           ],
           "complexity": "low",
           "python_library": "sklearn.neighbors",
-          "implemented": true
+          "implemented": false
         }
       ]
     },
@@ -533,7 +558,7 @@
           ],
           "complexity": "medium",
           "python_library": "sklearn.cluster",
-          "implemented": true
+          "implemented": false
         },
         {
           "id": "cluster_analysis",
@@ -554,7 +579,7 @@
           ],
           "complexity": "medium",
           "python_library": "sklearn.cluster",
-          "implemented": true
+          "implemented": false
         }
       ]
     },
@@ -598,7 +623,7 @@
           ],
           "complexity": "medium",
           "python_library": "sklearn.decomposition",
-          "implemented": true
+          "implemented": false
         }
       ]
     },
@@ -775,7 +800,7 @@
           ],
           "complexity": "medium",
           "python_library": "numpy.random / 自定义实现",
-          "implemented": true
+          "implemented": false
         },
         {
           "id": "cellular_automata",
@@ -872,7 +897,7 @@
           ],
           "complexity": "medium",
           "python_library": "pysd",
-          "implemented": true
+          "implemented": false
         },
         {
           "id": "discrete_event",
@@ -954,7 +979,7 @@
           ],
           "complexity": "medium",
           "python_library": "sklearn.neural_network",
-          "implemented": true
+          "implemented": false
         },
         {
           "id": "cnn",
@@ -970,7 +995,7 @@
           ],
           "complexity": "high",
           "python_library": "tensorflow",
-          "implemented": true
+          "implemented": false
         },
         {
           "id": "neural_network",
@@ -992,7 +1017,7 @@
           ],
           "complexity": "high",
           "python_library": "tensorflow / pytorch / sklearn.neural_network",
-          "implemented": true
+          "implemented": false
         }
       ]
     },
@@ -1053,7 +1078,7 @@
           ],
           "complexity": "medium",
           "python_library": "scikit-fuzzy",
-          "implemented": true
+          "implemented": false
         },
         {
           "id": "fuzzy_clustering",
@@ -1070,7 +1095,7 @@
           ],
           "complexity": "medium",
           "python_library": "scikit-fuzzy",
-          "implemented": true
+          "implemented": false
         }
       ]
     }
