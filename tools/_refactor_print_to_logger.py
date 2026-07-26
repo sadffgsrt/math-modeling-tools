@@ -24,15 +24,15 @@ def refactor(rel: str) -> None:
     src = p.read_text(encoding="utf-8")
     lines = src.splitlines(keepends=True)
 
-    has_logging_import = any(re.match(r"^\s*import logging\b", l) for l in lines)
+    has_logging_import = any(re.match(r"^\s*import logging\b", line) for line in lines)
     has_logger = LOGGER_LINE in src
 
     out = []
     inserted = False
-    for l in lines:
-        out.append(l)
+    for line in lines:
+        out.append(line)
         # 在第一条 import/from 语句之后插入 logging 导入与 logger（若缺）
-        if not inserted and re.match(r"^\s*(import|from)\s", l) and not l.lstrip().startswith("#"):
+        if not inserted and re.match(r"^\s*(import|from)\s", line) and not line.lstrip().startswith("#"):
             if not has_logging_import:
                 out.append("import logging\n")
                 has_logging_import = True
@@ -43,20 +43,20 @@ def refactor(rel: str) -> None:
 
     # 行级替换：无参 print() -> logger.info("")；其余 print( -> logger.info(
     new_lines = []
-    for l in out:
-        if "print(" in l:
-            l = re.sub(r"\bprint\(\)", 'logger.info("")', l)
-            l = re.sub(r"\bprint\(", "logger.info(", l)
-        new_lines.append(l)
+    for line in out:
+        if "print(" in line:
+            line = re.sub(r"\bprint\(\)", 'logger.info("")', line)
+            line = re.sub(r"\bprint\(", "logger.info(", line)
+        new_lines.append(line)
     out = new_lines
 
     # 在 __main__ 块首行注入 basicConfig，保证 demo 运行时日志可见
     final = []
     injected = False
-    for l in out:
-        final.append(l)
-        if not injected and re.match(r'^\s*if\s+__name__\s*==\s*["\']__main__["\']\s*:', l):
-            indent = re.match(r"^(\s*)", l).group(1)
+    for line in out:
+        final.append(line)
+        if not injected and re.match(r'^\s*if\s+__name__\s*==\s*["\']__main__["\']\s*:', line):
+            indent = re.match(r"^(\s*)", line).group(1)
             final.append(indent + '    logging.basicConfig(level=logging.INFO, format="%(message)s")\n')
             injected = True
 

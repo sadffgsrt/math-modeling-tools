@@ -296,7 +296,9 @@ class ProblemAnalysisRefiner:
                 crit_fn = _rule_critic_understanding
             else:
                 score, critique = _rule_critic_plan(current, problem_type)
-                crit_fn = lambda t, _pt=problem_type: _rule_critic_plan(t, _pt)
+                def _crit_fn(t, _pt=problem_type):
+                    return _rule_critic_plan(t, _pt)
+                crit_fn = _crit_fn
             _, rule_critique = crit_fn(current)
             defects = [d for d in rule_critique.split("；") if d.startswith("[")]
             if r < rounds:
