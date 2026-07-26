@@ -1,12 +1,38 @@
-# tests
+# 测试说明
 
-测试套件。
+## 默认运行范围
 
-- 绿集（当前稳定）：`test_workflow.py`、`test_model_solving.py`、`test_validation.py` → 110 passed / 19 xfailed / 0 failed。
-- `test_model_factory.py` 等文件面向已丢失的原版架构 API，与恢复版存在代差，保留供参考但**未纳入绿集**。
+当前项目处于恢复版重建阶段，部分历史测试依赖旧版模块接口（如 `llm_client`、旧版 `tool_protocol`、旧版 `ModelFactory` 直接 API 等）。
 
-运行绿集：
+`tests/conftest.py` 已把这些历史测试类默认标记为跳过，因此：
 
 ```bash
-PYTHONPATH=. python -m pytest tests/test_workflow.py tests/test_model_solving.py tests/test_validation.py -o addopts="" -q
+pytest
 ```
+
+将只运行**与恢复版当前代码匹配**的测试，默认结果应为全绿。
+
+## 强制运行历史测试
+
+如需排查或重建旧版测试，可设置环境变量：
+
+```bash
+# Linux / macOS
+RUN_LEGACY_TESTS=1 pytest
+
+# Windows PowerShell
+$env:RUN_LEGACY_TESTS=1; pytest
+
+# Windows CMD
+set RUN_LEGACY_TESTS=1 && pytest
+```
+
+## CI 配置
+
+`.github/workflows/ci.yml` 已把测试范围收敛到当前绿集：
+
+- `tests/test_workflow.py`
+- `tests/test_model_solving.py`
+- `tests/test_validation.py`
+
+后续随着模块重建，可逐步把历史测试从跳过名单中移除并纳入 CI。
