@@ -1,6 +1,6 @@
 [build-system]
-requires = ["setuptools>=68.0"]
-build-backend = "setuptools.backends._legacy:_Backend"
+requires = ["setuptools>=68.0", "wheel"]
+build-backend = "setuptools.build_meta"
 
 [project]
 name = "math-modeling-workflow"
@@ -8,7 +8,7 @@ version = "3.4.2"
 description = "数学建模竞赛自动化工作流框架 - LLM驱动的Agent流水线"
 readme = "README.md"
 requires-python = ">=3.10"
-license = {text = "MIT"}
+license = "MIT"
 authors = [
     {name = "AI 辅助系统"},
 ]
@@ -74,3 +74,8 @@ filterwarnings = [
 fail_under = 60
 show_missing = true
 skip_empty = true
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["modules*"]
+exclude = ["tests*", "benchmarks*"]
