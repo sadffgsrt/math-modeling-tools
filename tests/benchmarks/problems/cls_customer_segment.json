@@ -1,0 +1,15 @@
+{
+  "id": "CUMCM-CLS-2020-04",
+  "title": "电商客户细分与精准营销",
+  "type": "classification",
+  "background": "某电商平台拥有 5000 名会员的 RFM（最近消费、频次、金额）行为数据及人口属性。希望将客户划分为若干价值层级，并针对不同层级设计差异化营销。",
+  "problem_requirement": "建立客户分群模型，刻画各细分群体的行为特征，提出对应的精准营销策略。说明群体数与划分依据的合理性，并评估划分稳定性。",
+  "dataset_description": "5000 个样本 × 6 个特征（Recency、Frequency、Monetary、年龄、活跃度、客单价），无标签。需先做特征标准化再聚类。",
+  "variable_description": [
+    {"name": "recency", "desc": "最近一次消费距今天数", "role": "input"},
+    {"name": "frequency", "desc": "消费频次", "role": "input"},
+    {"name": "monetary", "desc": "累计消费金额（元）", "role": "input"},
+    {"name": "segment", "desc": "客户细分标签（待求）", "role": "output"}
+  ],
+  "expected_methods": ["kmeans", "dbscan", "factor_analysis", "decision_tree", "random_forest", "svm", "knn"]
+}

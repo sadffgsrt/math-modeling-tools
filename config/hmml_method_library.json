@@ -1,0 +1,179 @@
+{
+  "name": "CUMCM-HMML",
+  "version": "1.0",
+  "description": "面向 CUMCM/国赛的层次化建模方法库（Hierarchical Modeling Method Library）。结构：领域(domain) → 子领域(subdomain) → 方法(method)。参考 MM-Agent 的 HMML 设计思路移植，方法节点映射到本平台 model_catalog.json 的 53 个已实现模型。离线可用，不依赖 LLM。",
+  "domains": [
+    {
+      "domain": "评价与决策",
+      "domain_en": "Evaluation & Decision",
+      "keywords": ["评价", "排名", "排序", "优选", "权重", "决策", "综合", "打分"],
+      "subdomains": [
+        {
+          "subdomain": "综合评价",
+          "methods": [
+            {"method": "层次分析法(AHP)", "method_class": "evaluation", "model_id": "ahp", "description": "将复杂决策分解为层次结构，用成对比较矩阵求权重，适合多准则定性转定量评价。", "keywords": ["准则", "权重", "比较", "主观"]},
+            {"method": "TOPSIS 理想解法", "method_class": "evaluation", "model_id": "topsis", "description": "按与正/负理想解的贴近度对方案排序，适合多属性决策。", "keywords": ["方案", "距离", "贴近度", "排序"]},
+            {"method": "熵权法", "method_class": "evaluation", "model_id": "entropy_weight", "description": "用指标变异程度客观赋权，减少主观偏差，常与其余方法组合。", "keywords": ["客观", "变异", "赋权", "信息熵"]},
+            {"method": "灰色关联分析", "method_class": "evaluation", "model_id": "grey_relational", "description": "按序列几何形状相似度评价因素关联度，适合小样本。", "keywords": ["关联度", "小样本", "相似"]},
+            {"method": "主成分/综合评法", "method_class": "evaluation", "model_id": "comprehensive_evaluation", "description": "降维提取主成分并加权综合，缓解指标共线。", "keywords": ["降维", "共线", "综合得分"]}
+          ]
+        },
+        {
+          "subdomain": "模糊评价",
+          "methods": [
+            {"method": "模糊综合评价", "method_class": "evaluation", "model_id": "fuzzy_evaluation", "description": "用隶属度处理边界不清的定性评价，适合含模糊语义的准则。", "keywords": ["模糊", "隶属度", "语义"]}
+          ]
+        }
+      ]
+    },
+    {
+      "domain": "预测",
+      "domain_en": "Forecasting",
+      "keywords": ["预测", "趋势", "未来", "时间序列", "拟合", "回归"],
+      "subdomains": [
+        {
+          "subdomain": "回归预测",
+          "methods": [
+            {"method": "多元线性回归", "method_class": "regression", "model_id": "linear_regression", "description": "建立因变量对自变量的线性关系，解释性强、易检验。", "keywords": ["线性", "自变量", "解释"]},
+            {"method": "岭回归(Ridge)", "method_class": "regression", "model_id": "ridge", "description": "L2 正则缓解多重共线，提升预测稳定性。", "keywords": ["共线", "正则", "稳定"]},
+            {"method": "Lasso 回归", "method_class": "regression", "model_id": "lasso", "description": "L1 正则兼具变量选择，自动筛特征。", "keywords": ["特征选择", "稀疏"]},
+            {"method": "逻辑回归(分类预测)", "method_class": "regression", "model_id": "logistic_regression", "description": "对二分类/概率进行建模预测。", "keywords": ["分类", "概率", "二值"]}
+          ]
+        },
+        {
+          "subdomain": "时间序列预测",
+          "methods": [
+            {"method": "ARIMA", "method_class": "prediction", "model_id": "arima", "description": "差分平稳后自回归滑动平均，适合单变量时序。", "keywords": ["时序", "平稳", "差分", "自相关"]},
+            {"method": "指数平滑", "method_class": "prediction", "model_id": "exponential_smoothing", "description": "对近期观测加权，适合无趋势/季节的平滑预测。", "keywords": ["平滑", "加权", "短期"]},
+            {"method": "灰色预测(GM)", "method_class": "prediction", "model_id": "grey_prediction", "description": "少数据生成模型，适合小样本时序。", "keywords": ["少数据", "小样本", "生成"]},
+            {"method": "Prophet 加法趋势", "method_class": "prediction", "model_id": "prophet", "description": "趋势+季节+节假日分解，适合含强季节的业务时序。", "keywords": ["季节", "趋势", "节假日"]},
+            {"method": "LSTM 循环网络(纯Python近似)", "method_class": "neural_networks", "model_id": "lstm", "description": "捕捉长程依赖的时序深度学习，资源受限时用纯 Python 近似。", "keywords": ["长程", "深度学习", "依赖"]}
+          ]
+        }
+      ]
+    },
+    {
+      "domain": "优化",
+      "domain_en": "Optimization",
+      "keywords": ["优化", "最大", "最小", "资源", "配置", "调度", "约束"],
+      "subdomains": [
+        {
+          "subdomain": "连续与整数优化",
+          "methods": [
+            {"method": "线性规划", "method_class": "optimization", "model_id": "linear_programming", "description": "目标与约束均为线性，单纯形/内点法求解。", "keywords": ["线性", "资源分配", "约束"]},
+            {"method": "整数规划(0-1)", "method_class": "optimization", "model_id": "integer_programming", "description": "变量取整数/0-1，适合选址、排班等离散决策。", "keywords": ["整数", "选址", "排班", "0-1"]},
+            {"method": "非线性规划", "method_class": "optimization", "model_id": "nonlinear_programming", "description": "目标或约束含非线性项，用梯度/序列二次规划。", "keywords": ["非线性", "梯度"]}
+          ]
+        },
+        {
+          "subdomain": "启发式与群智能",
+          "methods": [
+            {"method": "遗传算法(GA)", "method_class": "optimization_meta", "model_id": "genetic_algorithm", "description": "交叉变异进化搜索，适合复杂多峰。", "keywords": ["进化", "多峰", "全局"]},
+            {"method": "粒子群(PSO)", "method_class": "optimization_meta", "model_id": "pso", "description": "群体速度位置更新寻优，参数少收敛快。", "keywords": ["群体", "收敛", "参数少"]},
+            {"method": "人工蜂群(ABC)", "method_class": "optimization_meta", "model_id": "abc", "description": "雇蜂/观蜂/侦察蜂分工寻优。", "keywords": ["蜂群", "分工"]},
+            {"method": "蚁群(TSP)", "method_class": "optimization_meta", "model_id": "ant_colony", "description": "信息素正反馈，适合路径/调度组合优化。", "keywords": ["路径", "调度", "信息素"]},
+            {"method": "模拟退火(SA)", "method_class": "optimization_meta", "model_id": "simulated_annealing", "description": "以概率接受劣解跳出局部最优。", "keywords": ["局部最优", "概率", "降温"]},
+            {"method": "差分进化(DE)", "method_class": "optimization_meta", "model_id": "differential_evolution", "description": "差分变异向量寻优，连续优化鲁棒。", "keywords": ["差分", "变异", "鲁棒"]}
+          ]
+        }
+      ]
+    },
+    {
+      "domain": "分类与聚类",
+      "domain_en": "Classification & Clustering",
+      "keywords": ["分类", "聚类", "分组", "模式", "识别"],
+      "subdomains": [
+        {
+          "subdomain": "监督分类",
+          "methods": [
+            {"method": "支持向量机(SVM)", "method_class": "classification", "model_id": "svm", "description": "最大间隔分类，适合高维小样本。", "keywords": ["间隔", "高维", "小样本"]},
+            {"method": "决策树", "method_class": "classification", "model_id": "decision_tree", "description": "规则可解释的分层划分。", "keywords": ["规则", "可解释", "划分"]},
+            {"method": "随机森林", "method_class": "classification", "model_id": "random_forest", "description": "多树集成提升稳健与精度。", "keywords": ["集成", "稳健", "精度"]},
+            {"method": "K近邻(KNN)", "method_class": "classification", "model_id": "knn", "description": "基于邻域相似度分类，无需训练。", "keywords": ["邻域", "相似", "惰性"]}
+          ]
+        },
+        {
+          "subdomain": "无监督聚类",
+          "methods": [
+            {"method": "K-Means", "method_class": "clustering", "model_id": "kmeans", "description": "按距离划分 k 个簇，适合球状分布。", "keywords": ["簇", "距离", "划分"]},
+            {"method": "DBSCAN", "method_class": "clustering", "model_id": "dbscan", "description": "基于密度发现任意形状簇并识别噪声。", "keywords": ["密度", "噪声", "任意形状"]},
+            {"method": "因子分析", "method_class": "dimension_reduction", "model_id": "factor_analysis", "description": "提取潜变量解释相关结构。", "keywords": ["潜变量", "相关", "降维"]}
+          ]
+        }
+      ]
+    },
+    {
+      "domain": "图与网络",
+      "domain_en": "Graph & Network",
+      "keywords": ["网络", "路径", "节点", "流量", "最短路"],
+      "subdomains": [
+        {
+          "subdomain": "网络优化",
+          "methods": [
+            {"method": "Dijkstra 最短路", "method_class": "graph_theory", "model_id": "dijkstra", "description": "非负权图单源最短路。", "keywords": ["最短路", "非负权", "单源"]},
+            {"method": "最大流", "method_class": "graph_theory", "model_id": "max_flow", "description": "网络中从源到汇的最大吞吐量。", "keywords": ["流量", "吞吐", "源汇"]},
+            {"method": "排队论", "method_class": "simulation", "model_id": "queueing_theory", "description": "用 Kendall 记号建模服务系统等待。", "keywords": ["等待", "服务台", "吞吐"]}
+          ]
+        }
+      ]
+    },
+    {
+      "domain": "微分方程与仿真",
+      "domain_en": "Differential & Simulation",
+      "keywords": ["仿真", "动态", "演化", "系统", "传播", "均衡"],
+      "subdomains": [
+        {
+          "subdomain": "连续与系统动力学",
+          "methods": [
+            {"method": "系统动力学(SD)", "method_class": "simulation", "model_id": "system_dynamics", "description": "存量流量回路建模长期动态。", "keywords": ["存量", "回路", "长期"]},
+            {"method": "元胞自动机(CA)", "method_class": "simulation", "model_id": "cellular_automata", "description": "局部规则驱动空间演化。", "keywords": ["空间", "局部规则", "演化"]},
+            {"method": "蒙特卡洛(MC)", "method_class": "simulation", "model_id": "monte_carlo", "description": "随机采样估计分布与风险。", "keywords": ["随机", "风险", "采样"]}
+          ]
+        },
+        {
+          "subdomain": "离散事件与智能体",
+          "methods": [
+            {"method": "离散事件仿真(DES)", "method_class": "simulation", "model_id": "discrete_event", "description": "事件驱动的多服务台排队仿真。", "keywords": ["事件", "服务台", "离散"]},
+            {"method": "基于智能体仿真(ABM)", "method_class": "simulation", "model_id": "agent_based", "description": "个体交互涌现整体行为（如 SIR 传播）。", "keywords": ["个体", "交互", "涌现"]},
+            {"method": "博弈论纳什均衡", "method_class": "simulation", "model_id": "game_theory", "description": "二人零和混合策略均衡求解。", "keywords": ["均衡", "策略", "对抗"]}
+          ]
+        }
+      ]
+    },
+    {
+      "domain": "统计与检验",
+      "domain_en": "Statistics & Test",
+      "keywords": ["显著", "检验", "方差", "相关", "假设"],
+      "subdomains": [
+        {
+          "subdomain": "假设检验",
+          "methods": [
+            {"method": "单因素方差分析(ANOVA)", "method_class": "statistics", "model_id": "anova", "description": "比较多组均值差异是否显著。", "keywords": ["多组", "均值", "显著"]},
+            {"method": "相关性检验", "method_class": "statistics", "model_id": "correlation_test", "description": "皮尔逊/斯皮尔曼检验变量相关。", "keywords": ["相关", "变量", "强度"]}
+          ]
+        }
+      ]
+    },
+    {
+      "domain": "神经网络与模糊",
+      "domain_en": "Neural & Fuzzy",
+      "keywords": ["神经网络", "深度学习", "模糊", "推理"],
+      "subdomains": [
+        {
+          "subdomain": "神经网络",
+          "methods": [
+            {"method": "多层感知机(MLP)", "method_class": "neural_networks", "model_id": "mlp", "description": "前馈网络拟合复杂非线性映射。", "keywords": ["非线性", "拟合", "前馈"]},
+            {"method": "卷积网络(CNN,简化)", "method_class": "neural_networks", "model_id": "cnn", "description": "局部卷积提取空间特征（资源受限时纯 Python 近似）。", "keywords": ["空间", "特征", "卷积"]}
+          ]
+        },
+        {
+          "subdomain": "模糊系统",
+          "methods": [
+            {"method": "Mamdani 模糊推理", "method_class": "fuzzy_logic", "model_id": "fuzzy_inference", "description": "If-Then 规则 + 重心法解模糊，适合专家经验控制/评价。", "keywords": ["规则", "解模糊", "专家"]},
+            {"method": "模糊C均值(FCM)", "method_class": "fuzzy_logic", "model_id": "fuzzy_clustering", "description": "软划分聚类，输出隶属度。", "keywords": ["软划分", "隶属度", "聚类"]}
+          ]
+        }
+      ]
+    }
+  ]
+}

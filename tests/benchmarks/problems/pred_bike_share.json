@@ -1,0 +1,17 @@
+{
+  "id": "CUMCM-PRED-2022-03",
+  "title": "城市共享单车需求量预测",
+  "type": "prediction",
+  "background": "某出行平台积累了某城市过去 24 个月的逐日共享单车骑行量，以及同期天气（温度、降雨、风速）、节假日、空气质量等特征。希望预测未来 3 个月各站点的日均需求以指导调度。",
+  "problem_requirement": "建立时间序列/回归预测模型，刻画需求与天气、节假日等因素的关系，对未来 90 天进行外推预测，并给出预测的误差估计与不确定性区间。",
+  "dataset_description": "728 个样本（逐日）× 7 个特征（温度、降雨、风速、节假日标志、空气质量指数、星期、前一日骑行量），目标为当日骑行总量。含少量降雨日的离群值。",
+  "variable_description": [
+    {"name": "temp", "desc": "日均温度（℃）", "role": "input"},
+    {"name": "rain", "desc": "降雨量（mm）", "role": "input"},
+    {"name": "wind", "desc": "平均风速（m/s）", "role": "input"},
+    {"name": "holiday", "desc": "是否节假日（0/1）", "role": "input"},
+    {"name": "aqi", "desc": "空气质量指数", "role": "input"},
+    {"name": "demand", "desc": "当日骑行总量（待预测）", "role": "output"}
+  ],
+  "expected_methods": ["linear_regression", "ridge", "lasso", "arima", "exponential_smoothing", "grey_prediction", "prophet", "lstm", "mlp"]
+}

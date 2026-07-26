@@ -1,0 +1,17 @@
+{
+  "id": "CUMCM-EVAL-2021-01",
+  "title": "区域科技成果转化能力综合评价",
+  "type": "evaluation",
+  "background": "某地科技主管部门希望对各园区的科技成果转化能力进行横向比较，以优化资源投放。已收集到 12 个园区在研发投入、专利产出、技术合同成交额、孵化企业数、人才密度等维度的年度数据。",
+  "problem_requirement": "建立综合评价模型，对 12 个园区的科技成果转化能力打分并排序，指出领先与滞后园区，并给出提升建议。需说明指标权重确定方法及其合理性。",
+  "dataset_description": "12 个样本 × 8 个指标的数值矩阵，量纲不一（研发投入单位亿元，专利数为件，合同成交额单位万元）。数据已做初步清洗，无缺失。",
+  "variable_description": [
+    {"name": "rd_invest", "desc": "研发投入（亿元）", "role": "input"},
+    {"name": "patent", "desc": "发明专利授权数（件）", "role": "input"},
+    {"name": "contract", "desc": "技术合同成交额（万元）", "role": "input"},
+    {"name": "incubated", "desc": "孵化器在孵企业数（家）", "role": "input"},
+    {"name": "talent", "desc": "研发人才密度（人/千人）", "role": "input"},
+    {"name": "score", "desc": "综合转化能力得分（待求）", "role": "output"}
+  ],
+  "expected_methods": ["ahp", "topsis", "entropy_weight", "grey_relational", "comprehensive_evaluation", "fuzzy_evaluation"]
+}

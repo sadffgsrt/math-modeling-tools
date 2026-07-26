@@ -1,0 +1,16 @@
+{
+  "id": "CUMCM-OPT-2023-02",
+  "title": "应急物资储备库选址与调配优化",
+  "type": "optimization",
+  "background": "某省拟在 20 个候选县区中选择若干建设应急物资储备库，并向 50 个乡镇配送。已知各县区建设成本、与各乡镇的运输距离、各乡镇的需求量及服务时效要求。",
+  "problem_requirement": "确定储备库选址方案与调配路径，使总建设成本与运输成本之和最小，同时满足各乡镇的需求覆盖与服务时效约束。给出可解释的最优/近优方案，并做敏感性分析。",
+  "dataset_description": "候选点 20 个（建设成本不同），需求点 50 个（需求量已知），距离矩阵 20×50（km）。无现成数值数据文件，需按题设参数建模。",
+  "variable_description": [
+    {"name": "build_cost", "desc": "各县区建设成本（万元）", "role": "input"},
+    {"name": "distance", "desc": "候选点-需求点距离矩阵（km）", "role": "input"},
+    {"name": "demand", "desc": "各乡镇需求量（吨）", "role": "input"},
+    {"name": "x", "desc": "选址 0-1 决策变量（待求）", "role": "output"},
+    {"name": "y", "desc": "调配量决策变量（待求）", "role": "output"}
+  ],
+  "expected_methods": ["linear_programming", "integer_programming", "genetic_algorithm", "pso", "simulated_annealing", "differential_evolution", "max_flow"]
+}
