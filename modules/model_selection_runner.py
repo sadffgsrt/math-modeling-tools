@@ -2,10 +2,10 @@
 # 职责：获取题目分析上下文（复用 problem_analysis 结果或重新分析）→ ModelSelector 选型 → 扁平 dict
 
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Dict, Optional
 
 from modules.problem_analysis.analyzer import ProblemAnalyzer
-from modules.model_selection.selector import ModelSelector, ModelSelection, ModelCandidate
+from modules.model_selection.selector import ModelSelector, ModelSelection
 
 # 模型目录路径（相对于 agent/config）
 _CATALOG_PATH = Path(__file__).resolve().parent.parent / "config" / "model_catalog.json"

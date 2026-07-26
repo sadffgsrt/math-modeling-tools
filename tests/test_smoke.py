@@ -4,7 +4,6 @@
 使用非交互模式，所有审批自动批准。
 """
 import pytest
-import json
 import tempfile
 import shutil
 from pathlib import Path
@@ -125,7 +124,7 @@ class TestEndToEndSmoke:
 
     def test_llm_client_import(self):
         """LLM 客户端模块可导入"""
-        from modules.llm_client import LLMClient, LLMConfig
+        from modules.llm_client import LLMConfig
         config = LLMConfig()
         assert config.is_configured() is False  # 未设置 API Key 时
 

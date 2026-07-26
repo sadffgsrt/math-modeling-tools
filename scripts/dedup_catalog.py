@@ -101,7 +101,7 @@ def main():
         encoding="utf-8"
     )
 
-    print(f"=== 去重与标记完成 ===")
+    print("=== 去重与标记完成 ===")
     print(f"原始模型数: {stats['before']}")
     print(f"去重后模型数: {stats['after']}")
     print(f"已实现: {stats['implemented']}")

@@ -7,7 +7,7 @@ from __future__ import annotations
 
 import csv
 import math
-from typing import Any, Dict, List
+from typing import Any, Dict
 
 from ._base import BaseModelSolver, register_category, _matmul, _transpose, _matvec, _solve
 

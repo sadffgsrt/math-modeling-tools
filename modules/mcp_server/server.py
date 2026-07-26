@@ -18,10 +18,8 @@ MCP 协议端点（JSON-RPC 2.0）：
 
 import json
 import threading
-import logging
 from http.server import HTTPServer, BaseHTTPRequestHandler
-from typing import Dict, Any, Optional, Callable
-from pathlib import Path
+from typing import Dict, Optional
 from urllib.parse import urlparse, parse_qs
 
 
@@ -339,7 +337,7 @@ class MCPServer:
         self._http_server = HTTPServer((self.host, self.port), MCPRequestHandler)
         self._http_server.mcp_server = self  # type: ignore[attr-defined]
         self.logger.info(f"MCP Server 启动: http://{self.host}:{self.port}")
-        self.logger.info(f"端点: /health /tools /tools/<name> /tools/<name>/call /approve /mcp /status")
+        self.logger.info("端点: /health /tools /tools/<name> /tools/<name>/call /approve /mcp /status")
         try:
             self._http_server.serve_forever()
         except KeyboardInterrupt:

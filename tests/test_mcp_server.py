@@ -8,7 +8,6 @@ import json
 import tempfile
 import shutil
 import numpy as np
-import pandas as pd
 from pathlib import Path
 from unittest import TestCase, main as unittest_main
 
@@ -22,7 +21,6 @@ class TestMCPServer(TestCase):
     """
 
     def setUp(self):
-        import urllib.request
         self.temp_dir = tempfile.mkdtemp()
         self.project_dir = Path(self.temp_dir) / "test_mcp_project"
 

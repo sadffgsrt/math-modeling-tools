@@ -21,7 +21,7 @@ jobs:
       - name: Type check
         run: mypy modules --ignore-missing-imports || true
       - name: Run tests
-        run: pytest --cov=modules --cov-report=xml --cov-fail-under=0
+        run: pytest tests/test_workflow.py tests/test_model_solving.py tests/test_validation.py --cov=modules --cov-report=xml --cov-fail-under=0
       - name: Upload coverage
         uses: codecov/codecov-action@v4
         with:

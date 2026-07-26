@@ -9,7 +9,7 @@
 """
 from __future__ import annotations
 
-from typing import Any, Dict, Optional
+from typing import Any, Dict
 
 
 def _get_selected_model(workflow: Any, kwargs: Dict[str, Any]) -> str:

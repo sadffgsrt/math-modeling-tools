@@ -1324,7 +1324,8 @@ class TestNewModules(TestCase):
     def test_result_export(self):
         """结果导出：导出为 CSV/JSON/Markdown"""
         from modules.result_export import ResultExporter
-        import tempfile, json
+        import tempfile
+        import json
         from pathlib import Path
         with tempfile.TemporaryDirectory() as tmp:
             tmp_path = Path(tmp)

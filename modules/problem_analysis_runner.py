@@ -2,7 +2,7 @@
 # 职责：定位题目文件 → ProblemAnalyzer 分析 → 转换为扁平 dict 供 main.py 与各下游阶段消费
 
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Dict, Optional
 
 from modules.problem_analysis.analyzer import ProblemAnalyzer
 

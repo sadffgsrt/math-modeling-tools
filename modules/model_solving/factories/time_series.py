@@ -5,7 +5,7 @@ arima：优先使用 statsmodels；若环境未安装则清晰抛出 ImportError
 from __future__ import annotations
 
 import csv
-from typing import Any, Dict, List
+from typing import Any, Dict
 
 from ._base import BaseModelSolver, register_category
 

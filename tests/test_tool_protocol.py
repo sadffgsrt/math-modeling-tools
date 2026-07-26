@@ -4,7 +4,6 @@
 """
 
 import sys
-import json
 import tempfile
 import shutil
 import numpy as np
@@ -194,7 +193,6 @@ class TestToolProtocol(TestCase):
     def test_dispatch_regression_success(self):
         """dispatch_tool_call 成功执行回归模型（端到端）"""
         from main import MathModelingWorkflow
-        import pandas as pd
 
         # 准备测试数据
         np.random.seed(42)

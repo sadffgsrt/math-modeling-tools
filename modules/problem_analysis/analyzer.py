@@ -6,7 +6,7 @@
 import re
 import json
 from pathlib import Path
-from typing import List, Dict, Optional, Union
+from typing import List
 from dataclasses import dataclass, field
 from datetime import datetime
 

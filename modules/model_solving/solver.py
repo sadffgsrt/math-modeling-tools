@@ -14,7 +14,7 @@ import warnings
 from dataclasses import dataclass, asdict
 from pathlib import Path
 from datetime import datetime
-from typing import Dict, List, Optional, Tuple, Any, Callable
+from typing import Dict, List, Optional, Tuple, Any
 
 warnings.filterwarnings("ignore")
 
@@ -326,14 +326,14 @@ class ModelSolver:
         print(f"求解结果已保存到: {self.results_dir}")
 
     def generate_report_md(self, result: SolvingResult, output_path: str):
-        md = f"# 模型求解报告\n\n## 基本信息\n\n"
+        md = "# 模型求解报告\n\n## 基本信息\n\n"
         md += f"- **结果ID**: {result.result_id}\n- **模型名称**: {result.model_name}\n"
         md += f"- **模型类型**: {result.model_type}\n- **执行时间**: {result.execution_time:.2f}秒\n"
         md += f"- **生成时间**: {result.created_at}\n\n## 模型参数\n\n"
         md += "| 参数名 | 值 | 描述 | 可调 |\n|--------|-----|------|------|\n"
         for param in result.parameters:
             md += f"| {param.name} | {param.value:.4f} | {param.description} | {'是' if param.is_tunable else '否'} |\n"
-        md += f"\n## 评估指标\n\n| 指标 | 值 |\n|------|-----|\n"
+        md += "\n## 评估指标\n\n| 指标 | 值 |\n|------|-----|\n"
         md += f"| MSE | {result.metrics.mse:.6f} |\n| RMSE | {result.metrics.rmse:.6f} |\n"
         md += f"| MAE | {result.metrics.mae:.6f} |\n| R² | {result.metrics.r2:.6f} |\n"
         if result.metrics.mape is not None:

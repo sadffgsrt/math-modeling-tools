@@ -7,7 +7,7 @@ from __future__ import annotations
 
 import math
 import random
-from typing import Any, Callable, Dict, List
+from typing import Any, Dict
 
 from ._base import BaseModelSolver, register_category
 
@@ -180,7 +180,6 @@ class SimulationSolver(BaseModelSolver):
         payoff = params.get("payoff")
         if payoff is None:
             raise ValueError("博弈论需要提供 payoff（行玩家收益矩阵，m×n）")
-        import numpy as _np  # type: ignore
         from scipy.optimize import linprog  # type: ignore
         A = [[float(v) for v in row] for row in payoff]
         m, n = len(A), len(A[0])

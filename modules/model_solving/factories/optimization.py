@@ -7,7 +7,6 @@ from __future__ import annotations
 
 import json
 import math
-import random
 from typing import Any, Dict, List, Optional, Tuple
 
 from ._base import BaseModelSolver, register_category

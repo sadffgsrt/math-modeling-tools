@@ -6,9 +6,9 @@ SVM / 决策树 / 随机森林 / KNN 需要 sklearn，诚实声明未实现。
 from __future__ import annotations
 
 import math
-from typing import Any, Dict, List
+from typing import Any, Dict
 
-from ._base import BaseModelSolver, load_tabular, register_category
+from ._base import BaseModelSolver, load_tabular
 
 
 def _sigmoid(z: float) -> float:
