@@ -790,16 +790,14 @@ class TestModelFactory(TestCase):
         self.assertEqual(r["status"], "success")
         self.assertAlmostEqual(r["optimal_value"], -20.0, places=1)
 
-    @pytest.mark.xfail(
-        reason="恢复版 solve 抛 NotImplementedError：integer_programming 未真正实现（缺 MILP 求解器）",
-        raises=NotImplementedError,
-    )
     def test_optimization_integer_programming(self):
-        c = np.array([-1.0, -2.0])
-        A_ub = np.array([[1.0, 1.0]])
-        b_ub = np.array([10.0])
+        c = [-1.0, -2.0]
+        A_ub = [[1.0, 1.0]]
+        b_ub = [10.0]
         r = self.factory.solve("integer_programming", c=c, A_ub=A_ub, b_ub=b_ub)
         self.assertEqual(r["status"], "success")
+        self.assertEqual(r["selected_items"], [0, 1])
+        self.assertAlmostEqual(r["optimal_value"], -3.0, places=4)
 
     def test_time_series_arima(self):
         pytest.importorskip(
@@ -943,29 +941,23 @@ class TestAdvancedModels(TestCase):
         self.assertEqual(r["method"], "DifferentialEvolution(pure_python)")
         self.assertLess(r["best_value"], 1.0)
 
-    @pytest.mark.xfail(
-        reason="恢复版 solve 抛 NotImplementedError：pso 未真正实现（需 pyswarm/scikit-opt 等专用库）",
-        raises=NotImplementedError,
-    )
     def test_pso(self):
         def sphere(x):
-            return float(np.sum(np.array(x) ** 2))
+            return float(sum(v * v for v in x))
         r = self.factory.solve("pso", objective=sphere, dim=2,
-                               bounds=[[-5, 5], [-5, 5]],
-                               n_particles=15, max_iter=30, random_state=42)
+                               bounds=[(-5, 5), (-5, 5)],
+                               pop_size=15, max_iter=30, random_state=42)
         self.assertEqual(r["status"], "success")
+        self.assertLess(r["best_value"], 1.0)
 
-    @pytest.mark.xfail(
-        reason="恢复版 solve 抛 NotImplementedError：abc 未真正实现（需 scikit-opt 等专用库）",
-        raises=NotImplementedError,
-    )
     def test_abc(self):
         def sphere(x):
-            return float(np.sum(np.array(x) ** 2))
+            return float(sum(v * v for v in x))
         r = self.factory.solve("abc", objective=sphere, dim=2,
-                               bounds=[[-5, 5], [-5, 5]],
-                               n_bees=20, max_iter=30, random_state=42)
+                               bounds=[(-5, 5), (-5, 5)],
+                               pop_size=20, max_iter=30, random_state=42)
         self.assertEqual(r["status"], "success")
+        self.assertLess(r["best_value"], 5.0)
 
     # ─── 神经网络类（整体未实现） ───
     @pytest.mark.xfail(
@@ -1002,29 +994,23 @@ class TestAdvancedModels(TestCase):
         self.assertEqual(r["status"], "success")
 
     # ─── 仿真中未实现部分（需 nashpy/mesa/simpy） ───
-    @pytest.mark.xfail(
-        reason="恢复版 solve 抛 NotImplementedError：game_theory 未真正实现（需 nashpy）",
-        raises=NotImplementedError,
-    )
     def test_game_theory(self):
-        r = self.factory.solve("game_theory", payoff=np.array([[3, 0], [5, 1]]))
+        r = self.factory.solve("game_theory", payoff=[[3, 0], [5, 1]])
         self.assertEqual(r["status"], "success")
+        # 行玩家最优混合策略保证收益 v*=1（列玩家选第1列压制）
+        self.assertAlmostEqual(r["value"], 1.0, places=4)
+        self.assertAlmostEqual(sum(r["row_strategy"]), 1.0, places=4)
 
-    @pytest.mark.xfail(
-        reason="恢复版 solve 抛 NotImplementedError：agent_based 未真正实现（需 mesa）",
-        raises=NotImplementedError,
-    )
     def test_agent_based(self):
-        r = self.factory.solve("agent_based", n_agents=10, n_steps=5)
+        r = self.factory.solve("agent_based", n_agents=10, n_steps=5, random_state=42)
         self.assertEqual(r["status"], "success")
+        self.assertEqual(r["final"]["S"] + r["final"]["I"] + r["final"]["R"], 10)
 
-    @pytest.mark.xfail(
-        reason="恢复版 solve 抛 NotImplementedError：discrete_event 未真正实现（需 simpy）",
-        raises=NotImplementedError,
-    )
     def test_discrete_event(self):
-        r = self.factory.solve("discrete_event", events=[])
+        r = self.factory.solve("discrete_event", arrival_rate=0.8, service_rate=1.0,
+                               n_servers=1, n_customers=50, random_state=42)
         self.assertEqual(r["status"], "success")
+        self.assertGreaterEqual(r["avg_wait_time"], 0.0)
 
     # ─── MODEL_CATEGORY_MAP 登记验证（恢复版用 get_category 读目录） ───
     def test_new_ids_in_category_map(self):
@@ -1240,17 +1226,15 @@ class TestV331NewModels(TestCase):
         self.assertEqual(result["method"], "GeneticAlgorithm(pure_python)")
         self.assertLess(result["best_value"], 1.0)
 
-    @pytest.mark.xfail(
-        reason="恢复版 solve 抛 NotImplementedError：ant_colony 未真正实现（需 scikit-opt）",
-        raises=NotImplementedError,
-    )
     def test_ant_colony(self):
         np.random.seed(42)
         coords = np.random.uniform(0, 100, (5, 2))
         D = np.sqrt(((coords[:, None, :] - coords[None, :, :]) ** 2).sum(axis=2))
+        D = [[float(v) for v in row] for row in D]
         result = self.factory.solve("ant_colony", distance_matrix=D, n_ants=10,
                                     max_iter=30, random_state=42)
         self.assertEqual(result["status"], "success")
+        self.assertEqual(sorted(result["best_route"]), list(range(5)))
 
     # ─── 别名解析（恢复版用 build_model + get_category 验证可构建与类别） ───
     def test_lightgbm_alias_in_build_supervised(self):

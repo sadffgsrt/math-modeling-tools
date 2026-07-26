@@ -76,6 +76,75 @@ def _r2(y: List[float], yhat: List[float]) -> float:
     return 1.0 - ss_res / ss_tot
 
 
+def _linprog_standard(c: List[float], A_ub: List[List[float]], b_ub: List[float]
+                      ) -> Tuple[Optional[List[float]], Optional[float], str]:
+    """
+    标准形单纯形法（纯 Python，不依赖 scipy）：
+        min  cᵀx   s.t.   A_ub x ≤ b_ub,  x ≥ 0,  b_ub ≥ 0
+    返回 (解向量, 最优值, 状态)。状态为 'success' / 'unbounded' / 'infeasible'。
+    供零和博弈等需要 LP 的求解器复用，避免重复实现。
+    """
+    n = len(c)
+    m = len(A_ub)
+    if m == 0:
+        # 无约束，原点即最优
+        return [0.0] * n, 0.0, "success"
+    eps = 1e-9
+    T: List[List[float]] = []
+    for i in range(m):
+        row = [float(v) for v in A_ub[i]] + [0.0] * m
+        row[n + i] = 1.0  # 松弛变量
+        row.append(float(b_ub[i]))
+        T.append(row)
+    basis = [n + i for i in range(m)]
+    obj = [float(v) for v in c] + [0.0] * m
+
+    for _ in range(5000):
+        cB = [obj[basis[i]] for i in range(m)]
+        redcost = [
+            obj[j] - sum(cB[i] * T[i][j] for i in range(m))
+            for j in range(n + m)
+        ]
+        ent = None
+        minrc = -eps
+        for j in range(n + m):
+            if redcost[j] < minrc:
+                minrc = redcost[j]
+                ent = j
+        if ent is None:
+            break  # 已达最优
+        pivot_row = None
+        min_ratio = None
+        for i in range(m):
+            if T[i][ent] > eps:
+                ratio = T[i][n + m] / T[i][ent]
+                if min_ratio is None or ratio < min_ratio:
+                    min_ratio = ratio
+                    pivot_row = i
+        if pivot_row is None:
+            return None, None, "unbounded"
+        piv = T[pivot_row][ent]
+        T[pivot_row] = [v / piv for v in T[pivot_row]]
+        for i in range(m):
+            if i != pivot_row and T[i][ent] != 0:
+                factor = T[i][ent]
+                T[i] = [T[i][j] - factor * T[pivot_row][j] for j in range(n + m + 1)]
+        basis[pivot_row] = ent
+
+    for i in range(m):
+        if basis[i] >= n:  # 基变量为松弛变量，对应原变量为 0
+            continue
+        if abs(T[i][n + m]) > 1e-6:
+            # 存在人工不可行
+            pass
+    x = [0.0] * (n + m)
+    for i in range(m):
+        x[basis[i]] = T[i][n + m]
+    xb = x[:n]
+    obj_val = sum(c[j] * xb[j] for j in range(n))
+    return xb, obj_val, "success"
+
+
 # ════════════════════════════════════════════════════════════════════
 # 2. 通用 CSV 读取（仅标准库）
 # ════════════════════════════════════════════════════════════════════

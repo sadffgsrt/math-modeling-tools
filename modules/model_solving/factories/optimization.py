@@ -88,9 +88,7 @@ class OptimizationSolver(BaseModelSolver):
         if self.model_id == "simulated_annealing":
             return self._solve_simulated_annealing(**params)
         if self.model_id == "integer_programming":
-            raise NotImplementedError(
-                "模型 integer_programming 在恢复版尚未实现（需要 MILP 求解器，如 pulp/PuLP 或 scipy 整数规划）"
-            )
+            return self._solve_integer_programming(**params)
         raise NotImplementedError(f"模型 {self.model_id} 在恢复版尚未实现")
 
     # ── 线性规划 ──
@@ -274,6 +272,82 @@ class OptimizationSolver(BaseModelSolver):
             "best_x": [float(v) for v in best],
             "best_value": float(best_val),
             "convergence": [float(v) for v in conv],
+        }
+
+    # ── 整数规划（0-1 ILP）──
+    def _solve_integer_programming(self, **params: Any) -> Dict[str, Any]:
+        c, A_ub, b_ub = self._load_lp_params(params)
+        n = len(c)
+        # 优先使用 scipy 的整数规划求解器（若环境安装了）
+        try:
+            import numpy as _np  # type: ignore
+            from scipy.optimize import milp, LinearConstraint, Bounds  # type: ignore
+            res = milp(
+                c=_np.array(c, dtype=float),
+                constraints=LinearConstraint(_np.array(A_ub, dtype=float), lb=-_np.inf, ub=_np.array(b_ub, dtype=float)),
+                bounds=Bounds(lb=0.0, ub=1.0),
+                integrality=1,
+            )
+            if res.success:
+                x = [int(round(float(v))) for v in res.x]
+                return {
+                    "model_category": "optimization",
+                    "model_id": "integer_programming",
+                    "model_name": self.model_name,
+                    "method": "scipy.optimize.milp",
+                    "status": "success",
+                    "x": x,
+                    "selected_items": [i for i in range(n) if x[i] == 1],
+                    "optimal_value": float(res.fun),
+                }
+            return {
+                "model_category": "optimization",
+                "model_id": "integer_programming",
+                "model_name": self.model_name,
+                "method": "scipy.optimize.milp",
+                "status": "infeasible",
+            }
+        except ImportError:
+            pass  # 退回纯 Python 枚举
+
+        # 纯 Python 回退：完全枚举 0/1 组合（仅适用于小规模 n<=16）
+        if n > 16:
+            raise NotImplementedError(
+                "纯 Python 整数规划回退仅支持变量数 n<=16 的 0-1 枚举；"
+                "更大规模请在安装 scipy 后使用 scipy.optimize.milp"
+            )
+        best = None
+        best_val = float("inf")
+        for mask in range(1 << n):
+            x = [(mask >> i) & 1 for i in range(n)]
+            feasible = True
+            for i in range(len(A_ub)):
+                if sum(A_ub[i][j] * x[j] for j in range(n)) > b_ub[i] + 1e-9:
+                    feasible = False
+                    break
+            if not feasible:
+                continue
+            val = sum(c[j] * x[j] for j in range(n))
+            if val < best_val:
+                best_val = val
+                best = x
+        if best is None:
+            return {
+                "model_category": "optimization",
+                "model_id": "integer_programming",
+                "model_name": self.model_name,
+                "method": "pure_python_enumeration",
+                "status": "infeasible",
+            }
+        return {
+            "model_category": "optimization",
+            "model_id": "integer_programming",
+            "model_name": self.model_name,
+            "method": "pure_python_enumeration",
+            "status": "success",
+            "x": best,
+            "selected_items": [i for i in range(n) if best[i] == 1],
+            "optimal_value": float(best_val),
         }
 
 

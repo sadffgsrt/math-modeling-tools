@@ -139,3 +139,74 @@ class TestModelSolverAdvanced(TestCase):
 
 if __name__ == "__main__":
     unittest_main()
+
+
+class TestNewOptimizationSimulation(TestCase):
+    """恢复版补齐的 optimization / optimization_meta / simulation stub 的真实实现测试"""
+
+    def setUp(self):
+        from modules.model_solving.model_factory import ModelFactory
+        self.factory = ModelFactory()
+        self.sphere = lambda x: sum(v * v for v in x)
+
+    def test_integer_programming_kp(self):
+        # 0-1 背包：max 60x0+100x1+120x2 s.t. 10x0+20x1+30x2<=50 -> 选 [1,2]
+        r = self.factory.solve("integer_programming",
+                               c=[-60, -100, -120], A_ub=[[10, 20, 30]], b_ub=[50])
+        self.assertEqual(r["status"], "success")
+        self.assertEqual(r["selected_items"], [1, 2])
+        self.assertAlmostEqual(r["optimal_value"], -220.0, places=4)
+
+    def test_pso_converges_to_zero(self):
+        r = self.factory.solve("pso", objective=self.sphere, dim=3,
+                               bounds=[(-5, 5)] * 3, max_iter=80, pop_size=40)
+        self.assertEqual(r["status"], "success")
+        self.assertLess(r["best_value"], 1.0)
+
+    def test_abc_converges(self):
+        r = self.factory.solve("abc", objective=self.sphere, dim=3,
+                               bounds=[(-5, 5)] * 3, max_iter=60, pop_size=30)
+        self.assertEqual(r["status"], "success")
+        self.assertLess(r["best_value"], 5.0)
+
+    def test_genetic_algorithm_converges(self):
+        r = self.factory.solve("genetic_algorithm", objective=self.sphere, dim=3,
+                               bounds=[(-5, 5)] * 3, max_iter=80)
+        self.assertEqual(r["status"], "success")
+        self.assertLess(r["best_value"], 5.0)
+
+    def test_ant_colony_tsp(self):
+        coords = [[0, 0], [1, 2], [3, 1], [2, 4], [5, 3]]
+        r = self.factory.solve("ant_colony", coords=coords, n_ants=15, max_iter=40)
+        self.assertEqual(r["status"], "success")
+        # 回路应包含全部城市
+        self.assertEqual(sorted(r["best_route"]), list(range(5)))
+        self.assertGreater(r["best_length"], 0)
+
+    def test_game_theory_symmetric(self):
+        # 匹配硬币：对称零和博弈，值应为 0，最优混合策略为 [0.5, 0.5]
+        r = self.factory.solve("game_theory", payoff=[[1, -1], [-1, 1]])
+        self.assertEqual(r["status"], "success")
+        self.assertAlmostEqual(r["value"], 0.0, places=4)
+        self.assertAlmostEqual(sum(r["row_strategy"]), 1.0, places=4)
+        for p in r["row_strategy"]:
+            self.assertAlmostEqual(p, 0.5, places=4)
+
+    def test_agent_based_sir(self):
+        r = self.factory.solve("agent_based", n_agents=80, init_infected=4,
+                               beta=0.25, gamma=0.08, n_steps=40)
+        self.assertEqual(r["status"], "success")
+        self.assertEqual(r["final"]["S"] + r["final"]["I"] + r["final"]["R"], 80)
+        # 疫情应能收敛（最终感染数较少或归零）
+        self.assertLessEqual(r["final"]["I"], 80)
+
+    def test_discrete_event_queue(self):
+        r = self.factory.solve("discrete_event", arrival_rate=0.8, service_rate=1.0,
+                               n_servers=2, n_customers=300)
+        self.assertEqual(r["status"], "success")
+        self.assertGreaterEqual(r["avg_wait_time"], 0.0)
+        self.assertLessEqual(r["utilization"], 1.0)
+
+
+if __name__ == "__main__":
+    unittest_main()
