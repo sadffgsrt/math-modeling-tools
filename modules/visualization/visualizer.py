@@ -77,7 +77,8 @@ class ModelVisualizer:
                           y_pred: "np.ndarray",
                           feature_names: Optional[List[str]] = None,
                           feature_importance: Optional[Dict[str, float]] = None,
-                          output_dir: str = "figures") -> VisualizationResult:
+                          output_dir: str = "figures",
+                          chart_types: Optional[List[str]] = None) -> VisualizationResult:
         """
         创建所有可视化图表（真实绘图逻辑，依赖 matplotlib/numpy/pandas）。
 
@@ -196,6 +197,12 @@ class ModelVisualizer:
                     "path": str(fig_path)
                 })
                 figure_paths.append(str(fig_path))
+
+        # 用户偏好过滤（确定性实现，模仿 MM-Agent create_charts 的 user_prompt 选图意图）
+        if chart_types is not None:
+            wanted = set(chart_types)
+            figures = [f for f in figures if f["id"] in wanted]
+            figure_paths = [f["path"] for f in figures]
 
         result = VisualizationResult(
             result_id=f"VR-{datetime.now().strftime('%Y%m%d%H%M%S')}",

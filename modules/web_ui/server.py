@@ -12,6 +12,8 @@
 """
 
 import json
+import os
+import re
 import threading
 import urllib.parse
 from http.server import BaseHTTPRequestHandler, HTTPServer
@@ -31,6 +33,12 @@ INDEX_HTML = """<!DOCTYPE html>
 </head>
 <body>
     <h1>数学建模竞赛工作流 Web UI</h1>
+    <nav style="margin:8px 0;font-size:14px">
+      <a href="/gallery">可视化画廊</a> |
+      <a href="/api/status">状态</a> |
+      <a href="/api/gallery">图表清单</a> |
+      <a href="/api/catalog">模型目录</a>
+    </nav>
     <div id="app">正在加载状态...</div>
     <script src="/static/app.js"></script>
 </body>
@@ -178,6 +186,14 @@ class _WebUIRequestHandler(BaseHTTPRequestHandler):
             self._send_text("application/javascript; charset=utf-8", APP_JS.encode("utf-8"))
             return
 
+        # 可视化画廊与图表资源（公开浏览/下载，受白名单类型与防穿越限制）
+        if path == "/gallery":
+            self._handle_gallery()
+            return
+        if path.startswith("/figures/"):
+            self._serve_project_file(path[len("/figures/"):])
+            return
+
         # API 路由（需要认证）
         if path.startswith("/api/"):
             if not self._check_auth():
@@ -206,6 +222,8 @@ class _WebUIRequestHandler(BaseHTTPRequestHandler):
             self._send_json(200, {"running": False, "progress": 0.0})
         elif path == "/api/agent/decisions":
             self._send_json(200, {"history": []})
+        elif path == "/api/gallery":
+            self._handle_api_gallery()
         else:
             self._send_json(404, {"error": "未知端点: " + path})
 
@@ -230,6 +248,8 @@ class _WebUIRequestHandler(BaseHTTPRequestHandler):
             self._handle_analyze(raw)
         elif path == "/api/upload":
             self._handle_upload(raw, content_type)
+        elif path == "/api/visualize":
+            self._handle_visualize(raw)
         else:
             self._send_json(404, {"error": "未知端点: " + path})
 
@@ -284,6 +304,136 @@ class _WebUIRequestHandler(BaseHTTPRequestHandler):
             self._send_json(200, {"success": True, "uploaded": uploaded, "preview": preview})
         else:
             self._send_json(200, {"success": False, "uploaded": [], "preview": {}})
+
+    # ─── 可视化画廊（模仿 MM-Agent 图表集中展示 + 可浏览/下载） ───
+    def _handle_gallery(self):
+        """GET /gallery：返回已生成的画廊 HTML；未生成则返回提示页。"""
+        owner = self.server.owner
+        base = Path(getattr(owner.workflow, "project_dir", "."))
+        candidates = ["results/figures/gallery.html", "figures/gallery.html"]
+        for rel in candidates:
+            p = base / rel
+            if p.exists():
+                self._send_text("text/html; charset=utf-8", p.read_bytes())
+                return
+        hint = (
+            "<!DOCTYPE html><html lang='zh-CN'><head><meta charset='utf-8'>"
+            "<title>可视化画廊</title></head><body style='font-family:sans-serif;padding:24px'>"
+            "<h1>可视化画廊</h1><p>尚未生成画廊。</p>"
+            "<p>请先运行可视化阶段（带 <code>--gallery</code> 开关），或调用 "
+            "<code>VisualizationOps.build_gallery</code> 生成。</p>"
+            "<p><a href='/'>返回控制台</a></p></body></html>"
+        )
+        self._send_text("text/html; charset=utf-8", hint.encode("utf-8"))
+
+    def _serve_project_file(self, subpath: str):
+        """GET /figures/<relpath>：白名单类型的项目文件服务（防目录穿越）。"""
+        owner = self.server.owner
+        base = Path(getattr(owner.workflow, "project_dir", ".")).resolve()
+        target = (base / subpath).resolve()
+        # 防穿越：目标必须位于项目目录内
+        if target != base and not str(target).startswith(str(base) + os.sep):
+            self._send_json(403, {"error": "禁止访问目录外路径"})
+            return
+        if not target.exists() or not target.is_file():
+            self._send_json(404, {"error": "文件不存在: " + subpath})
+            return
+        allowed = {".png", ".jpg", ".jpeg", ".gif", ".html", ".json", ".css",
+                   ".js", ".md", ".csv", ".svg", ".txt"}
+        if target.suffix.lower() not in allowed:
+            self._send_json(403, {"error": "不支持的文件类型: " + target.suffix})
+            return
+        ctype = {
+            ".png": "image/png", ".jpg": "image/jpeg", ".jpeg": "image/jpeg",
+            ".gif": "image/gif", ".html": "text/html; charset=utf-8",
+            ".json": "application/json; charset=utf-8",
+            ".css": "text/css; charset=utf-8",
+            ".js": "application/javascript; charset=utf-8",
+            ".md": "text/markdown; charset=utf-8",
+            ".csv": "text/csv; charset=utf-8",
+            ".svg": "image/svg+xml", ".txt": "text/plain; charset=utf-8",
+        }.get(target.suffix.lower(), "application/octet-stream")
+        try:
+            data = target.read_bytes()
+        except Exception:
+            self._send_json(500, {"error": "读取失败"})
+            return
+        self._send_text(ctype, data)
+
+    def _handle_api_gallery(self):
+        """GET /api/gallery：列出已生成的图表（id/title/type/url）与画廊状态。"""
+        owner = self.server.owner
+        base = Path(getattr(owner.workflow, "project_dir", "."))
+        fig_dirs = [base / "results" / "figures", base / "figures"]
+        figs = []
+        for d in fig_dirs:
+            if d.exists() and d.is_dir():
+                for f in sorted(d.glob("*.png")):
+                    rel = f.relative_to(base).as_posix()
+                    figs.append({
+                        "name": f.name,
+                        "url": "/figures/" + rel,
+                        "size": f.stat().st_size,
+                        "dir": d.name,
+                    })
+        gallery_exists = any((base / c).exists() for c in
+                             ["results/figures/gallery.html", "figures/gallery.html"])
+        self._send_json(200, {
+            "gallery_url": "/gallery",
+            "gallery_exists": gallery_exists,
+            "figures_dirs": [str(d) for d in fig_dirs if d.exists()],
+            "figures": figs,
+            "count": len(figs),
+        })
+
+    def _handle_visualize(self, raw: bytes):
+        """POST /api/visualize：接收用户可视化偏好（模仿 MM-Agent create_charts 的
+        user_prompt/chart_num 交互入口），确定性映射并持久化，返回生成计划。"""
+        try:
+            data = json.loads(raw.decode("utf-8")) if raw else {}
+        except Exception:
+            data = {}
+        user_pref = (data.get("user_pref") or "").strip()
+        chart_types = data.get("chart_types") or None
+        max_charts = data.get("max_charts")
+        # 确定性偏好映射（替代 MM-Agent 的 LLM user_prompt 理解）
+        if chart_types is None and user_pref:
+            try:
+                from modules.visualization.visualization_ops import pref_to_chart_types
+                chart_types = pref_to_chart_types(user_pref)
+            except Exception:
+                chart_types = None
+        if isinstance(max_charts, str):
+            try:
+                max_charts = int(max_charts)
+            except ValueError:
+                max_charts = None
+        # 持久化偏好到 results_dir（供可视化阶段应用）
+        owner = self.server.owner
+        saved = False
+        results_dir = getattr(owner.workflow, "results_dir", None)
+        if results_dir is not None:
+            try:
+                Path(results_dir).mkdir(parents=True, exist_ok=True)
+                prefs = {
+                    "user_pref": user_pref,
+                    "chart_types": chart_types,
+                    "max_charts": max_charts,
+                }
+                (Path(results_dir) / "visualization_prefs.json").write_text(
+                    json.dumps(prefs, ensure_ascii=False, indent=2), encoding="utf-8")
+                saved = True
+            except Exception:
+                saved = False
+        self._send_json(200, {
+            "success": True,
+            "plan": {
+                "requested_types": chart_types or "all_available",
+                "max_charts": max_charts,
+                "note": "偏好已保存；运行可视化阶段（--gallery）时将应用这些图表选项。",
+            },
+            "prefs_saved": saved,
+        })
 
 
 # ─── HTTP 服务容器（携带 owner 引用） ───
@@ -357,7 +507,7 @@ class WebUIServer:
             "version": self.VERSION,
             "model_count": 53,
             "category_count": 14,
-            "test_count": 236,
+            "test_count": _count_tests(),
             "stages": list(stages),
             "project_dir": str(getattr(wf, "project_dir", "")),
         }
@@ -418,6 +568,29 @@ class WebUIServer:
         except Exception:
             # 上传持久化失败不影响接口返回成功（预览数据已在内存中）
             pass
+
+
+# ─── 测试计数（校准展示值，替代硬编码旧值） ───
+def _count_tests() -> int:
+    """扫描项目 tests/ 目录下所有 ``def test_`` 的数量。
+
+    用于 build_status() 的 test_count 展示值，替代此前硬编码的 236，
+    使前端展示随实际测试规模动态更新。
+    """
+    try:
+        tests_dir = Path(__file__).resolve().parent.parent.parent / "tests"
+        if not tests_dir.exists():
+            return 0
+        n = 0
+        for p in tests_dir.rglob("*.py"):
+            try:
+                text = p.read_text(encoding="utf-8", errors="ignore")
+            except Exception:
+                continue
+            n += len(re.findall(r"^\s*def test_", text, re.M))
+        return n
+    except Exception:
+        return 0
 
 
 # ─── 工厂函数（测试契约入口） ───

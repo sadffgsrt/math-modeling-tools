@@ -148,7 +148,8 @@ class TestWebUI(TestCase):
             self.assertEqual(data["version"], "3.4.2")
             self.assertEqual(data["model_count"], 53)
             self.assertEqual(data["category_count"], 14)
-            self.assertEqual(data["test_count"], 236)
+            # test_count 已校准为动态统计（替代原硬编码 236），随测试规模增长
+            self.assertGreaterEqual(data["test_count"], 276)
             self.assertEqual(len(data["stages"]), 7)
             self.assertIn("project_dir", data)
         finally:
@@ -351,6 +352,79 @@ class TestWebUI(TestCase):
                 self.assertIn("preview", data)
                 self.assertEqual(data["preview"]["rows"], 2)
                 self.assertEqual(data["preview"]["cols"], 3)
+        finally:
+            server.stop()
+
+    # ─── 新增测试：可视化画廊与偏好（建议线路 P1） ───
+
+    def _seed_figures(self, server):
+        """在 workflow.project_dir 下放置 dummy 图表与画廊，供画廊路由测试。"""
+        import pathlib
+        base = pathlib.Path(server.workflow.project_dir)
+        fig_dir = base / "figures"
+        fig_dir.mkdir(parents=True, exist_ok=True)
+        (fig_dir / "dummy_chart.png").write_bytes(b"\x89PNG\r\n\x1a\n dummy")
+        (fig_dir / "gallery.html").write_text(
+            "<!DOCTYPE html><html><body>gallery</body></html>", encoding="utf-8")
+
+    def test_gallery_route(self):
+        """16. GET /gallery 返回已生成的画廊 HTML"""
+        server = self._make_server()
+        self._seed_figures(server)
+        server.start_background()
+        try:
+            status, body, ctype = self._http_get_raw(server, "/gallery")
+            self.assertEqual(status, 200)
+            self.assertIn("text/html", ctype)
+            self.assertIn(b"<html", body)
+        finally:
+            server.stop()
+
+    def test_gallery_route_missing(self):
+        """17. GET /gallery 未生成时返回提示页（200 html）"""
+        server = self._make_server()
+        server.start_background()
+        try:
+            status, body, ctype = self._http_get_raw(server, "/gallery")
+            self.assertEqual(status, 200)
+            self.assertIn("text/html", ctype)
+        finally:
+            server.stop()
+
+    def test_api_gallery(self):
+        """18. GET /api/gallery 列出已生成图表"""
+        server = self._make_server()
+        self._seed_figures(server)
+        server.start_background()
+        try:
+            status, data = self._http_get(server, "/api/gallery")
+            self.assertEqual(status, 200)
+            self.assertTrue(data["gallery_exists"])
+            self.assertGreaterEqual(data["count"], 1)
+            self.assertIn("dummy_chart.png", [f["name"] for f in data["figures"]])
+        finally:
+            server.stop()
+
+    def test_api_visualize_prefs(self):
+        """19. POST /api/visualize 保存偏好并返回确定性生成计划"""
+        server = self._make_server()
+        server.start_background()
+        try:
+            status, data = self._http_post(
+                server, "/api/visualize",
+                {"user_pref": "我想看预测趋势和特征重要性", "max_charts": 3})
+            self.assertEqual(status, 200)
+            self.assertTrue(data["success"])
+            plan = data["plan"]
+            self.assertIn("pred_vs_actual", plan["requested_types"])
+            self.assertIn("feature_importance", plan["requested_types"])
+            self.assertEqual(plan["max_charts"], 3)
+            self.assertTrue(data["prefs_saved"])
+            import pathlib, json
+            prefs_path = pathlib.Path(server.workflow.results_dir) / "visualization_prefs.json"
+            self.assertTrue(prefs_path.exists())
+            prefs = json.loads(prefs_path.read_text(encoding="utf-8"))
+            self.assertEqual(prefs["max_charts"], 3)
         finally:
             server.stop()
 

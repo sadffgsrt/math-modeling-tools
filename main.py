@@ -115,6 +115,7 @@ class MathModelingWorkflow:
 
         # 初始化人工审批管理器
         self.non_interactive = non_interactive
+        self.gallery = False  # --gallery 开关：可视化后生成可浏览画廊
         self.approval_manager = ApprovalManager(self.project_dir, non_interactive=non_interactive)
         self.logger.info(f"人工审批管理器已初始化（{'非交互模式，自动批准' if non_interactive else '交互模式'}）")
 
@@ -291,15 +292,51 @@ class MathModelingWorkflow:
         from modules.model_solving_runner import run_model_solving
         return run_model_solving(self, **kwargs)
 
+    def _maybe_build_gallery(self, result: Dict) -> None:
+        """若启用 --gallery，基于可视化结果生成可浏览的 HTML 画廊。
+
+        画廊写入与图表相同的 output_dir，Web UI 的 /gallery 可直接浏览/下载。
+        """
+        if not getattr(self, "gallery", False):
+            return
+        meta = result.get("figures_meta") or []
+        if not meta:
+            self.logger.warning("无图表元信息，跳过画廊生成")
+            return
+        try:
+            from datetime import datetime
+            from modules.visualization.visualizer import VisualizationResult
+            from modules.visualization.visualization_ops import VisualizationOps
+            res = VisualizationResult(
+                result_id=result.get("result_id", "VZ"),
+                figures=meta,
+                figure_paths=result.get("figures", []) or [m.get("path") for m in meta],
+                created_at=datetime.now().isoformat(),
+                metadata={
+                    "total_figures": result.get("figures_count", len(meta)),
+                    "output_dir": result.get("output_dir", "figures"),
+                },
+            )
+            out = result.get("output_dir", "figures")
+            gpath = VisualizationOps(output_dir=out).build_gallery(
+                res, title="建模结果可视化画廊", output_dir=out)
+            self.logger.info(f"可视化画廊已生成: {gpath}")
+        except Exception as e:
+            self.logger.warning(f"画廊生成失败（不影响主流程）: {e}")
+
     def _run_visualization(self, **kwargs) -> Dict:
         """可视化阶段 - 人工协作模式（薄包装）"""
         from modules.visualization_runner import run_visualization
-        return run_visualization(self, **kwargs)
+        result = run_visualization(self, **kwargs)
+        self._maybe_build_gallery(result)
+        return result
 
     def _run_visualization_interactive(self) -> Dict:
         """可视化阶段 - 人工全程参与协作模式（薄包装）"""
         from modules.visualization_runner import run_visualization_interactive
-        return run_visualization_interactive(self)
+        result = run_visualization_interactive(self)
+        self._maybe_build_gallery(result)
+        return result
 
     def _run_validation(self, **kwargs) -> Dict:
         from modules.validation_runner import run_validation
@@ -472,10 +509,13 @@ def main():
     parser.add_argument("--no-cache", action="store_true", help="禁用缓存，重新执行所有阶段")
     parser.add_argument("--non-interactive", action="store_true",
                         help="非交互模式：所有审批自动批准（用于测试/CI 环境）")
+    parser.add_argument("--gallery", action="store_true",
+                        help="可视化阶段完成后生成可浏览的 HTML 画廊（经 Web UI 的 /gallery 查看）")
     args = parser.parse_args()
 
     wf = MathModelingWorkflow(args.project, no_cache=args.no_cache,
                               non_interactive=args.non_interactive)
+    wf.gallery = args.gallery
     if args.status:
         wf.print_status()
     elif args.performance:

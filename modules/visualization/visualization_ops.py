@@ -40,18 +40,33 @@ class VisualizationOps:
     def generate(self, data: Any = None, y_true: Any = None, y_pred: Any = None,
                  feature_names: Optional[List[str]] = None,
                  feature_importance: Optional[Dict[str, float]] = None,
-                 output_dir: Optional[str] = None) -> VisualizationResult:
-        """生成全部可视化图表，返回 VisualizationResult。
+                 output_dir: Optional[str] = None,
+                 chart_types: Optional[List[str]] = None,
+                 max_charts: Optional[int] = None,
+                 user_pref: Optional[str] = None) -> VisualizationResult:
+        """生成可视化图表，返回 VisualizationResult。
 
-        参数与 ModelVisualizer.create_all_figures 一致；缺失依赖时抛明确 ImportError。
+        参数与 ModelVisualizer.create_all_figures 一致；此外支持用户偏好驱动：
+          - chart_types: 指定要生成的图表 id 白名单（如 ["pred_vs_actual","residuals"]）。
+          - max_charts: 图表数量上限（模仿 MM-Agent create_charts 的 chart_num 意图）。
+          - user_pref: 自然语言偏好（模仿 MM-Agent 的 user_prompt），确定性映射为 chart_types。
+        缺失依赖时抛明确 ImportError。
         """
         out = output_dir or self.output_dir
+        # 用户偏好（user_pref）确定性映射为图表类型（替代 LLM 的 prompt 理解）
+        if chart_types is None and user_pref:
+            chart_types = pref_to_chart_types(user_pref)
         viz = ModelVisualizer()
         result = viz.create_all_figures(
             data=data, y_true=y_true, y_pred=y_pred,
             feature_names=feature_names, feature_importance=feature_importance,
-            output_dir=out,
+            output_dir=out, chart_types=chart_types,
         )
+        # 数量上限（chart_num 意图）：按已生成顺序截断
+        if max_charts is not None and len(result.figures) > max_charts:
+            result.figures = result.figures[:max_charts]
+            result.figure_paths = [f["path"] for f in result.figures]
+            result.metadata["total_figures"] = len(result.figures)
         viz.save_result(result, out)
         viz.generate_report_md(result, Path(out) / "visualization_report.md")
         return result
@@ -184,4 +199,38 @@ def build_visualization_gallery(result: VisualizationResult,
     return VisualizationOps().build_gallery(result, title=title, output_dir=output_dir)
 
 
-__all__ = ["VisualizationOps", "build_visualization_gallery"]
+# ─────────────────────────────────────────────────────────────
+# 用户偏好 → 图表类型（确定性映射，模仿 MM-Agent create_charts 的 user_prompt 选图意图）
+# 不依赖 LLM：用中文关键词命中，由用户描述想要的图，而非让模型生成绘图代码。
+# ─────────────────────────────────────────────────────────────
+_PREF_KEYWORDS: Dict[str, List[str]] = {
+    "pred_vs_actual": ["预测", "趋势", "拟合", "回归", "实际", "对比", "predict"],
+    "error_over_samples": ["误差", "趋势", "随样本", "变化", "预测", "error"],
+    "residuals": ["残差", "误差", "分布", "诊断", "residual"],
+    "feature_importance": ["重要", "贡献", "权重", "特征", "排序", "importance"],
+    "data_distribution": ["分布", "直方", "数据", "特征", "distribution"],
+    "correlation_heatmap": ["相关", "关联", "热力", "矩阵", "correlation"],
+    "boxplot": ["箱线", "箱", "分布", "离群", "四分位", "box"],
+}
+
+
+def pref_to_chart_types(user_pref: str) -> Optional[List[str]]:
+    """把用户自然语言偏好（user_pref）确定性映射为图表 id 列表。
+
+    对应 MM-Agent ``ChartCreator.create_charts(paper_content, chart_num, user_prompt)``
+    中 user_prompt 的作用——由用户描述想要的图。本函数用关键词命中取并集，
+    命中则返回有序 id 列表，未命中返回 None（交由上层生成全部可用图）。
+    """
+    if not user_pref:
+        return None
+    text = user_pref.lower()
+    hits: set = set()
+    for cid, kws in _PREF_KEYWORDS.items():
+        for kw in kws:
+            if kw in text:
+                hits.add(cid)
+                break
+    return sorted(hits) if hits else None
+
+
+__all__ = ["VisualizationOps", "build_visualization_gallery", "pref_to_chart_types"]
