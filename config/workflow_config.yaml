@@ -1,0 +1,208 @@
+﻿# 数学建模竞赛工作流配置
+# 版本: 3.4.2
+# 更新时间: 2026-07-25
+
+workflow:
+  name: "数学建模竞赛工作流"
+  version: "3.4.2"
+  competition: "CUMCM"  # CUMCM / MCM / ICM
+  language: "zh"  # zh / en
+  
+# 模块配置
+modules:
+  problem_analysis:
+    enabled: true
+    auto_detect_type: true
+    supported_types:
+      - optimization      # 优化类
+      - prediction        # 预测类
+      - classification    # 分类类
+      - evaluation        # 评价类
+      - simulation        # 仿真类
+      - comprehensive     # 综合类
+
+  model_selection:
+    enabled: true
+    max_candidates: 5
+    include_comparison: true
+    # 仅推荐 catalog 中 implemented=true 的模型
+    only_implemented: true
+
+  data_processing:
+    enabled: true
+    handle_missing: "auto"  # auto / drop / interpolate / fill
+    handle_outlier: "auto"  # auto / drop / clip / transform
+    scaling: "standard"     # standard / minmax / robust / none
+    # 缺失值处理阈值
+    missing_delete_threshold: 0.8  # 缺失超过此比例删除列
+    missing_interpolate_threshold: 0.3  # 缺失超过此比例使用插值
+    # 异常值处理配置
+    outlier_iqr_multiplier: 1.5  # IQR倍数
+    outlier_quantile_lower: 0.25  # 下四分位数
+    outlier_quantile_upper: 0.75  # 上四分位数
+    # 质量评分权重
+    quality_missing_weight: 0.5
+    quality_duplicate_weight: 0.3
+    quality_constant_weight: 0.2
+    # 独热编码配置
+    one_hot_encoding:
+      max_unique_values: 10  # 最大唯一值数量，超过则使用标签编码
+      drop_first: true  # 是否删除第一个类别（避免多重共线性）
+    # 模拟数据配置（M8：默认禁用，必须显式开启）
+    allow_simulation: false
+    simulation:
+      n_samples: 200
+      random_seed: 42
+      coefficients: [2.5, 1.8, -0.7]
+      noise_std: 0.3
+
+  model_solving:
+    enabled: true
+    sensitivity_analysis: true
+    cross_validation: true
+    cv_folds: 5                  # 交叉验证折数
+    forecast_steps: 5            # 时序预测步数
+    metrics:
+      - accuracy
+      - rmse
+      - mae
+      - r2
+    # 模型参数配置（H1：补齐所有 factory 使用的参数）
+    models:
+      # 回归
+      ridge_alpha: 1.0
+      lasso_alpha: 0.1
+      polynomial_degree: 2
+      rf_n_estimators: 100
+      rf_max_depth: null           # null 表示不限制
+      svm_kernel: rbf
+      # KNN
+      knn_n_neighbors: 5
+      # 聚类
+      kmeans_n_clusters: 3
+      dbscan_eps: 0.5
+      dbscan_min_samples: 5
+      # 降维
+      pca_n_components: 3
+      # ARIMA
+      arima_order: [1, 1, 1]
+
+  visualization:
+    enabled: true
+    format: ["png", "svg"]
+    dpi: 300
+    style: "seaborn-v0_8-whitegrid"
+    palette: "husl"
+    # 灵敏度分析阈值
+    sensitivity_thresholds:
+      high: 15
+      medium: 5
+    # HC8 修复：字体和图表尺寸配置化（原硬编码于 main.py._run_visualization_interactive）
+    font_family: ['SimHei', 'Microsoft YaHei', 'DejaVu Sans']
+    figure_sizes:
+      small: [8, 6]
+      medium: [10, 8]
+      large: [12, 10]
+      widescreen: [16, 9]
+      default: medium   # 默认尺寸键名
+    # L9：推荐可视化工具列表（配置化，可在 README 引用）
+    recommended_tools:
+      - {name: "Plotly",       desc: "交互式图表",     url: "https://plotly.com"}
+      - {name: "Tableau",      desc: "商业智能",       url: "https://www.tableau.com"}
+      - {name: "Google Charts", desc: "网页图表",      url: "https://developers.google.com/chart"}
+      - {name: "RAWGraphs",    desc: "自定义图表",     url: "https://rawgraphs.io"}
+      - {name: "Datawrapper",  desc: "新闻级图表",     url: "https://www.datawrapper.de"}
+      - {name: "Vega-Lite",    desc: "声明式可视化",   url: "https://vega.github.io/vega-lite"}
+      - {name: "Flourish",     desc: "数据故事",       url: "https://flourish.studio"}
+      - {name: "Infogram",     desc: "信息图",         url: "https://infogram.com"}
+
+  validation:
+    enabled: true
+    # 数据验证配置
+    missing_threshold: 0.3
+    duplicate_threshold: 0.1
+    correlation_threshold: 0.95
+    variance_threshold: 0.01
+    # 模型验证配置
+    cv_folds: 5
+    significance_level: 0.05
+    min_r2: 0.5
+    max_rmse_ratio: 0.3
+    # 正态性检验配置
+    min_samples_normality: 8
+    max_samples_normality: 5000
+    # 评分阈值配置
+    score_thresholds:
+      excellent: 90
+      good: 75
+      acceptable: 60
+    
+  paper_writing:
+    enabled: true
+    template: "cumcm_template.docx"
+    auto_generate:
+      - abstract
+      - introduction
+      - model_assumption
+      - symbol_description
+      - model_building
+      - result_analysis
+      - model_evaluation
+      - conclusion
+      - references
+      - appendix
+
+# 限额配置（M7：消除散落各处的 magic number）
+limits:
+  max_variables_display: 5          # main.py 显示用
+  max_constraints_display: 3        # main.py 显示用
+  max_constraint_length: 30         # main.py 显示用
+  max_variables_extract: 25         # analyzer.py 提取上限
+  max_constraints_extract: 20       # analyzer.py 提取上限
+  max_sub_problems: 6               # analyzer.py 提取上限
+  max_keywords: 12                  # analyzer.py 排序后保留
+  keyword_count_cap: 3              # analyzer.py 单关键词计数上限
+  difficulty_thresholds:
+    hard: 9
+    medium: 4
+  # HC3 修复：难度评分信号阈值配置化（原硬编码于 analyzer._assess_difficulty）
+  difficulty_signal_thresholds:
+    # 变量数量信号 [阈值, 得分]
+    variables: {high: 10, mid: 5, low: 1, score_high: 3, score_mid: 2, score_low: 1}
+    # 约束数量信号
+    constraints: {high: 8, mid: 4, low: 1, score_high: 3, score_mid: 2, score_low: 1}
+    # 子问题数量信号
+    sub_problems: {high: 3, low: 1, score_high: 2, score_low: 1}
+    # 关键词多样性信号
+    keywords: {high: 8, mid: 4, score_high: 2, score_mid: 1}
+    # 类型置信度信号
+    confidence: {low: 0.5, mid: 0.7, score_low: 2, score_mid: 1}
+  # HC5 修复：AHP 一致性阈值配置化（RI 表为 Saaty 理论标准值，保持硬编码）
+  ahp:
+    cr_threshold: 0.1           # CR 一致性阈值，CR < 此值认为一致
+    reciprocal_tolerance: 1e-6  # 正互反性容差
+
+# 输出配置
+output:
+  paper_format: "docx"
+  figure_format: "png"
+  dpi: 300
+  table_format: "csv"
+  
+# 版本控制
+version_control:
+  enabled: true
+  auto_commit: true
+  commit_message_format: "[{stage}] {description}"
+  
+# 进度追踪
+progress_tracking:
+  enabled: true
+  state_file: "state/workflow_state.json"
+  progress_file: "state/progress.json"
+  
+# 日志配置
+logging:
+  level: "INFO"
+  file: "logs/workflow.log"
+  format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"

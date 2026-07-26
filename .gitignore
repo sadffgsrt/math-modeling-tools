@@ -1,0 +1,70 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# 虚拟环境
+venv/
+env/
+ENV/
+.venv/
+env.bak/
+venv.bak/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# 操作系统
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# 项目运行时缓存与日志
+cache/
+logs/
+projects/*/
+!projects/.template/
+
+# 运行输出
+output/
+
+# 性能基准结果
+benchmarks/results/
+
+# 临时验证脚本
+_verify_*.py
+_verify_*.py.tmp
+
+# 临时文件
+*.tmp
+*.bak
+*.log
+
+# Jupyter Notebook 检查点
+.ipynb_checkpoints/
+
+# pytest 缓存
+.pytest_cache/
+.coverage
+htmlcov/

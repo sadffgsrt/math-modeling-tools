@@ -1,0 +1,57 @@
+# 数学建模竞赛工作流 - Python依赖
+# 安装命令: pip install -r requirements.txt
+
+# 数据处理
+pandas>=1.5.0
+numpy>=1.23.0
+openpyxl>=3.0.10
+
+# 机器学习
+scikit-learn>=1.1.0
+
+# 科学计算
+scipy>=1.9.0
+
+# 时间序列（ARIMA 完整功能所需；缺失时 model_factory 会降级为线性趋势）
+statsmodels>=0.13.0
+
+# 可视化
+matplotlib>=3.6.0
+
+# 文件处理
+PyPDF2>=3.0.0
+python-docx>=0.8.11
+PyYAML>=6.0  # 配置文件解析；缺失时 model_factory 会降级为 DEFAULT_PARAMS 默认值
+
+# 可选依赖（用于高级功能）
+# plotly>=5.10.0
+# seaborn>=0.12.0  # L1说明：visualizer.py 中的 "seaborn-v0_8-whitegrid" 是 matplotlib 3.6+ 内置 style 名称，
+                  #            无需安装 seaborn 包；如需使用 seaborn 高级 API（如 sns.heatmap），再启用此依赖
+
+# 完整模型支持（model_catalog.json 中 implemented=true 但超出核心依赖的第三方库）
+# 未安装时 model_factory 会优雅降级。推荐按需安装，避免一次性拉取 tensorflow/torch 等大型依赖：
+#   pip install -r requirements.txt            # 核心依赖（薄安装，保证基础流水线可跑）
+#   pip install "math-modeling-workflow[models-extra]"   # 或手动取消下方注释
+# xgboost>=1.6.0
+# lightgbm>=3.3.0
+# catboost>=1.2.0
+# pulp>=2.7.0
+# pyswarm>=1.2.0
+# scikit-opt>=0.15.0
+# deap>=1.4.0
+# pymoo>=0.6.0
+# tensorflow>=2.15.0
+# torch>=2.2.0
+# prophet>=1.1.0
+# ahpy>=1.0.0
+# scikit-fuzzy>=0.4.0
+# networkx>=3.1.0
+# mesa>=2.1.0
+# simpy>=4.0.0
+# nashpy>=0.0.40
+# pysd>=3.0.0
+
+# LLM 集成（Agent 模式必需）
+openai>=1.0.0
+
+# 本文件保留仅用于 pip install -r 兼容，建议使用 pyproject.toml
