@@ -4,6 +4,8 @@
 #       _load_model_catalog 已能处理 {"models": {...}} 结构（model_catalog.json 即此格式）。
 
 import json
+import logging
+logger = logging.getLogger("mathmodeling")
 from pathlib import Path
 from typing import Dict, List, Optional
 from dataclasses import dataclass, asdict
@@ -293,7 +295,7 @@ pip install {model.python_library.split('.')[0] if '.' in model.python_library e
         with open(output_path, 'w', encoding='utf-8') as f:
             json.dump(asdict(selection), f, ensure_ascii=False, indent=2)
 
-        print(f"模型选型结果已保存到: {output_path}")
+        logger.info(f"模型选型结果已保存到: {output_path}")
 
     def generate_comparison_md(self, selection: ModelSelection, output_path: str):
         """生成模型对比报告Markdown"""
@@ -359,4 +361,4 @@ pip install {model.python_library.split('.')[0] if '.' in model.python_library e
         with open(output_path, 'w', encoding='utf-8') as f:
             f.write(md_content)
 
-        print(f"模型对比报告已保存到: {output_path}")
+        logger.info(f"模型对比报告已保存到: {output_path}")

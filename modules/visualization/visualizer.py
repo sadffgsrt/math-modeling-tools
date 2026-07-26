@@ -12,6 +12,8 @@
 """
 
 import json
+import logging
+logger = logging.getLogger("mathmodeling")
 from pathlib import Path
 from typing import Dict, List, Optional
 from dataclasses import dataclass, asdict
@@ -254,7 +256,7 @@ class ModelVisualizer:
             plt.close()
             return fig_path
         except Exception as e:
-            print(f"创建预测散点图失败: {e}")
+            logger.info(f"创建预测散点图失败: {e}")
             return None
 
     def _plot_residuals(self, y_true: "np.ndarray", y_pred: "np.ndarray",
@@ -294,7 +296,7 @@ class ModelVisualizer:
             plt.close()
             return fig_path
         except Exception as e:
-            print(f"创建残差图失败: {e}")
+            logger.info(f"创建残差图失败: {e}")
             return None
 
     def _plot_feature_importance(self, feature_importance: Dict[str, float],
@@ -330,7 +332,7 @@ class ModelVisualizer:
             plt.close()
             return fig_path
         except Exception as e:
-            print(f"创建特征重要性图失败: {e}")
+            logger.info(f"创建特征重要性图失败: {e}")
             return None
 
     def _plot_data_distribution(self, data: "pd.DataFrame", feature_names: List[str],
@@ -365,7 +367,7 @@ class ModelVisualizer:
             plt.close()
             return fig_path
         except Exception as e:
-            print(f"创建数据分布图失败: {e}")
+            logger.info(f"创建数据分布图失败: {e}")
             return None
 
     def _plot_correlation_heatmap(self, data: "pd.DataFrame",
@@ -404,7 +406,7 @@ class ModelVisualizer:
             plt.close()
             return fig_path
         except Exception as e:
-            print(f"创建热力图失败: {e}")
+            logger.info(f"创建热力图失败: {e}")
             return None
 
     def _plot_error_over_samples(self, y_true: "np.ndarray", y_pred: "np.ndarray",
@@ -439,7 +441,7 @@ class ModelVisualizer:
             plt.close()
             return fig_path
         except Exception as e:
-            print(f"创建误差分析图失败: {e}")
+            logger.info(f"创建误差分析图失败: {e}")
             return None
 
     def _plot_boxplot(self, data: "pd.DataFrame", feature_names: List[str],
@@ -476,7 +478,7 @@ class ModelVisualizer:
             plt.close()
             return fig_path
         except Exception as e:
-            print(f"创建箱线图失败: {e}")
+            logger.info(f"创建箱线图失败: {e}")
             return None
 
     def save_result(self, result: VisualizationResult, output_dir: str):
@@ -486,7 +488,7 @@ class ModelVisualizer:
         result_path = output_path / "visualization_result.json"
         with open(result_path, 'w', encoding='utf-8') as f:
             json.dump(asdict(result), f, ensure_ascii=False, indent=2)
-        print(f"可视化结果已保存到: {output_path}")
+        logger.info(f"可视化结果已保存到: {output_path}")
 
     def generate_report_md(self, result: VisualizationResult, output_path: str):
         """生成可视化报告 Markdown"""
@@ -522,7 +524,7 @@ class ModelVisualizer:
         output_path.parent.mkdir(parents=True, exist_ok=True)
         with open(output_path, 'w', encoding='utf-8') as f:
             f.write(md_content)
-        print(f"可视化报告已保存到: {output_path}")
+        logger.info(f"可视化报告已保存到: {output_path}")
 
 
 def main():
@@ -554,10 +556,11 @@ def main():
         feature_importance=feature_importance,
         output_dir=str(output_dir)
     )
-    print(f"生成图表数: {len(result.figures)}")
+    logger.info(f"生成图表数: {len(result.figures)}")
     visualizer.save_result(result, "output")
     visualizer.generate_report_md(result, "output/visualization_report.md")
 
 
 if __name__ == "__main__":
+    logging.basicConfig(level=logging.INFO, format="%(message)s")
     main()

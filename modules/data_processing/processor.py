@@ -3,6 +3,8 @@
 # 说明：从 v3.0 蓝本（03_data_processing/processor.py）忠实移植，去掉数字前缀 import，类与接口不变。
 
 import json
+import logging
+logger = logging.getLogger("mathmodeling")
 import pandas as pd
 import numpy as np
 from pathlib import Path
@@ -465,7 +467,7 @@ class DataProcessor:
         with open(feature_path, 'w', encoding='utf-8') as f:
             json.dump([asdict(fi) for fi in result.feature_info], f, ensure_ascii=False, indent=2)
 
-        print(f"处理结果已保存到: {output_dir}")
+        logger.info(f"处理结果已保存到: {output_dir}")
 
     def generate_report_md(self, result: ProcessingResult, output_path: str):
         """生成数据处理报告Markdown"""
@@ -524,4 +526,4 @@ class DataProcessor:
         with open(output_path, 'w', encoding='utf-8') as f:
             f.write(md_content)
 
-        print(f"数据处理报告已保存到: {output_path}")
+        logger.info(f"数据处理报告已保存到: {output_path}")

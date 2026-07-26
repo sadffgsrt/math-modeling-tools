@@ -12,6 +12,8 @@
 """
 
 import json
+import logging
+logger = logging.getLogger("mathmodeling")
 from pathlib import Path
 from typing import Dict, List, Optional, Any
 from dataclasses import dataclass, asdict
@@ -684,26 +686,84 @@ class ComprehensiveValidator:
             return "critical"
 
 
+class ReviewGateError(Exception):
+    """审查门禁异常：审查结果低于阈值或处于阻断状态时抛出（#44 门禁化）。"""
+
+
+def gate_review(report: ValidationReport, threshold: float = 60.0,
+                block_status: tuple = ("critical", "poor")) -> ValidationReport:
+    """审查结果门禁（#44）。
+
+    当 report.overall_score < threshold 或 report.overall_status 属于 block_status 时，
+    抛出 ReviewGateError 阻断后续流程；否则返回原报告（调用方可继续）。
+    """
+    if report.overall_score < threshold or report.overall_status in block_status:
+        raise ReviewGateError(
+            f"审查未通过（门禁）：评分 {report.overall_score:.1f} < 阈值 {threshold} "
+            f"或状态 {report.overall_status} 属阻断状态。{report.summary}"
+        )
+    return report
+
+
 class PaperQualityValidator:
     """论文质量检查器（移植自 v3.0，基于建模论文质量检查标准）"""
 
     def __init__(self, config: Optional[Dict] = None):
         self.config = config or {}
 
+    # 多视角审查（#45）：每个视角对应一组独立检查项，可枚举、可配置
+    PERSPECTIVES: List[str] = [
+        "standards",             # 变量/符号/术语定义规范性
+        "assumptions",           # 假设合理性与显式性
+        "model_selection",       # 模型选型依据充分性
+        "argumentation",         # 论证逻辑自洽性
+        "figures",               # 图表引用与说明
+        "numerical_consistency", # 数值一致性（符号/量纲/计算结果）
+        "figures_exist",         # 图表文件真实存在
+        "format",                # 格式与结构合规
+    ]
+
+    @classmethod
+    def list_perspectives(cls) -> List[str]:
+        """返回所有可用审查视角（多视角可枚举、可配置）。"""
+        return list(cls.PERSPECTIVES)
+
     def validate_paper(self, paper_content: str, problem_analysis: Dict,
                        model_selection: Dict, solving_results: Dict,
                        validation_results: Dict, visualization_results: Dict,
-                       figures_dir: Optional[str] = None) -> ValidationReport:
+                       figures_dir: Optional[str] = None,
+                       perspectives: Optional[List[str]] = None) -> ValidationReport:
         _require_numpy_pandas()
+        # 多视角可配置（#45）：perspectives=None 跑全部；否则仅跑指定视角
+        spotlight = set(perspectives) if perspectives else None
+        if spotlight:
+            unknown = spotlight - set(self.PERSPECTIVES)
+            if unknown:
+                logger.warning(f"validate_paper: 忽略未知视角 {sorted(unknown)}")
+            active = [p for p in self.PERSPECTIVES if p in spotlight]
+            if not active:
+                logger.warning("validate_paper: 指定视角均无效，回退为全视角")
+                active = list(self.PERSPECTIVES)
+        else:
+            active = list(self.PERSPECTIVES)
+
         checks = []
-        checks.extend(self._check_standards(paper_content, problem_analysis, model_selection))
-        checks.extend(self._check_assumptions(paper_content, problem_analysis))
-        checks.extend(self._check_model_selection(paper_content, model_selection, problem_analysis))
-        checks.extend(self._check_argumentation(paper_content, solving_results))
-        checks.extend(self._check_figures(paper_content, visualization_results))
-        checks.extend(self._check_numerical_consistency(paper_content, solving_results, validation_results))
-        checks.extend(self._check_figures_exist(visualization_results, figures_dir))
-        checks.extend(self._check_format(paper_content))
+        if "standards" in active:
+            checks.extend(self._check_standards(paper_content, problem_analysis, model_selection))
+        if "assumptions" in active:
+            checks.extend(self._check_assumptions(paper_content, problem_analysis))
+        if "model_selection" in active:
+            checks.extend(self._check_model_selection(paper_content, model_selection, problem_analysis))
+        if "argumentation" in active:
+            checks.extend(self._check_argumentation(paper_content, solving_results))
+        if "figures" in active:
+            checks.extend(self._check_figures(paper_content, visualization_results))
+        if "numerical_consistency" in active:
+            checks.extend(self._check_numerical_consistency(paper_content, solving_results, validation_results))
+        if "figures_exist" in active:
+            checks.extend(self._check_figures_exist(visualization_results, figures_dir))
+        if "format" in active:
+            checks.extend(self._check_format(paper_content))
 
         passed = sum(1 for c in checks if c.status == "passed")
         warnings = sum(1 for c in checks if c.status == "warning")
@@ -741,7 +801,8 @@ class PaperQualityValidator:
             created_at=datetime.now().isoformat(),
             metadata={
                 "paper_length": len(paper_content),
-                "has_figures": ("图" in paper_content) or ("figure" in paper_content.lower())
+                "has_figures": ("图" in paper_content) or ("figure" in paper_content.lower()),
+                "perspectives": active,
             }
         )
 
@@ -1034,7 +1095,7 @@ def save_validation_report(report: ValidationReport, output_path: str):
     output_path.parent.mkdir(parents=True, exist_ok=True)
     with open(output_path, 'w', encoding='utf-8') as f:
         json.dump(asdict(report), f, ensure_ascii=False, indent=2, default=str)
-    print(f"验证报告已保存到: {output_path}")
+    logger.info(f"验证报告已保存到: {output_path}")
 
 
 def generate_validation_md(report: ValidationReport, output_path: str):
@@ -1088,7 +1149,7 @@ def generate_validation_md(report: ValidationReport, output_path: str):
     output_path.parent.mkdir(parents=True, exist_ok=True)
     with open(output_path, 'w', encoding='utf-8') as f:
         f.write(md_content)
-    print(f"验证报告Markdown已保存到: {output_path}")
+    logger.info(f"验证报告Markdown已保存到: {output_path}")
 
 
 def main():
@@ -1103,12 +1164,12 @@ def main():
     data.loc[0:5, 'feature_0'] = np.nan
     data.loc[10:15, 'feature_1'] = data.loc[10:15, 'feature_1'] * 100
 
-    print("=" * 60)
-    print("数据验证示例")
-    print("=" * 60)
+    logger.info("=" * 60)
+    logger.info("数据验证示例")
+    logger.info("=" * 60)
     data_validator = DataValidator()
     data_report = data_validator.validate_dataset(data, "sample_data")
-    print(f"数据验证评分: {data_report.overall_score}/100  状态: {data_report.overall_status}")
+    logger.info(f"数据验证评分: {data_report.overall_score}/100  状态: {data_report.overall_status}")
 
     output_dir = Path("output")
     output_dir.mkdir(exist_ok=True)
@@ -1121,19 +1182,20 @@ def main():
         y_clean = data['target'].values
         model = LinearRegression()
         model.fit(X_clean, y_clean)
-        print("\n" + "=" * 60)
-        print("模型验证示例")
-        print("=" * 60)
+        logger.info("\n" + "=" * 60)
+        logger.info("模型验证示例")
+        logger.info("=" * 60)
         model_validator = ModelValidator()
         model_report = model_validator.validate_model(
             model, X_clean, y_clean, "linear_regression",
             feature_names=[f'feature_{i}' for i in range(5)])
-        print(f"模型验证评分: {model_report.overall_score}/100  状态: {model_report.overall_status}")
+        logger.info(f"模型验证评分: {model_report.overall_score}/100  状态: {model_report.overall_status}")
         save_validation_report(model_report, output_dir / "model_validation.json")
         generate_validation_md(model_report, output_dir / "model_validation.md")
     except ImportError:
-        print("sklearn未安装，跳过模型验证示例")
+        logger.info("sklearn未安装，跳过模型验证示例")
 
 
 if __name__ == "__main__":
+    logging.basicConfig(level=logging.INFO, format="%(message)s")
     main()

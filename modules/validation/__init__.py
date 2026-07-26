@@ -2,9 +2,11 @@
 from .validator import (
     DataValidator, ModelValidator, ComprehensiveValidator, PaperQualityValidator,
     ValidationCheck, ValidationReport, save_validation_report, generate_validation_md,
+    ReviewGateError, gate_review,
 )
 
 __all__ = [
     "DataValidator", "ModelValidator", "ComprehensiveValidator", "PaperQualityValidator",
     "ValidationCheck", "ValidationReport", "save_validation_report", "generate_validation_md",
+    "ReviewGateError", "gate_review",
 ]

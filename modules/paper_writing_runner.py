@@ -60,7 +60,7 @@ def run_paper_writing(workflow, **kwargs) -> Dict[str, Any]:
         chapters_count 等。
     """
     from modules.paper_writing.writer import PaperWriter
-    from modules.validation.validator import PaperQualityValidator
+    from modules.validation.validator import PaperQualityValidator, gate_review, ReviewGateError
 
     # 聚合上游真实结果（缺失则使用空 dict，由 PaperWriter 按模板生成，不伪造数据）
     problem_analysis = kwargs.get("problem_analysis") or _load_stage(workflow, "problem_analysis")
@@ -127,6 +127,17 @@ def run_paper_writing(workflow, **kwargs) -> Dict[str, Any]:
                 "模型验证结果为 acceptable（可接受但非优良），结论可靠性一般，建议补充验证。\n")
     else:
         gate, note = "passed", ""
+
+    # 论文质量自审查纳入门禁（#44）：质量 critical/poor 或低于阈值 → 阻断为 failed
+    try:
+        gate_review(pq_report, threshold=60.0)
+    except ReviewGateError:
+        if gate != "failed":
+            gate = "failed"
+        note += ("\n\n---\n\n## 论文质量审查未通过\n\n"
+                 f"**论文质量评分 {pq_report.overall_score:.1f}/100，状态 {pq_report.overall_status}。**\n"
+                 "论文质量未达门禁阈值，提交前请修订。\n")
+
     if note and md_path.exists():
         with md_path.open("a", encoding="utf-8") as f:
             f.write(note)

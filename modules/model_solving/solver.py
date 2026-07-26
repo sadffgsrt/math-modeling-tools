@@ -8,6 +8,8 @@
 对应库时，抛出清晰的 ImportError（诚实，不编造数值）。
 """
 from __future__ import annotations
+import logging
+logger = logging.getLogger("mathmodeling")
 
 import json
 import warnings
@@ -197,7 +199,7 @@ class ModelSolver:
         try:
             return model.predict(X)
         except Exception as e:  # pragma: no cover
-            print(f"预测失败: {e}")
+            logger.info(f"预测失败: {e}")
             return None
 
     def _calculate_metrics(self, y_true, y_pred, model_type):
@@ -323,7 +325,7 @@ class ModelSolver:
             result_dict["residuals"] = np.asarray(result.residuals).tolist()
         with open(result_path, "w", encoding="utf-8") as f:
             json.dump(result_dict, f, ensure_ascii=False, indent=2)
-        print(f"求解结果已保存到: {self.results_dir}")
+        logger.info(f"求解结果已保存到: {self.results_dir}")
 
     def generate_report_md(self, result: SolvingResult, output_path: str):
         md = "# 模型求解报告\n\n## 基本信息\n\n"
@@ -343,7 +345,7 @@ class ModelSolver:
         output_path = Path(output_path)
         output_path.parent.mkdir(parents=True, exist_ok=True)
         output_path.write_text(md, encoding="utf-8")
-        print(f"求解报告已保存到: {output_path}")
+        logger.info(f"求解报告已保存到: {output_path}")
 
 
 # 兼容 v3.0 的便捷别名
@@ -360,8 +362,9 @@ def main():
     model = LinearRegression().fit(X, y)
     solver = ModelSolver()
     result = solver.solve_model(model, X, y, model_name="linear_regression", feature_names=[f"f{i}" for i in range(5)])
-    print("R²:", result.metrics.r2)
+    logger.info("R²:", result.metrics.r2)
 
 
 if __name__ == "__main__":
+    logging.basicConfig(level=logging.INFO, format="%(message)s")
     main()

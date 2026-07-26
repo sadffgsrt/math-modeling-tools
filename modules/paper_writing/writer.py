@@ -12,6 +12,8 @@
 """
 
 import json
+import logging
+logger = logging.getLogger("mathmodeling")
 from pathlib import Path
 from typing import Dict, List, Optional, Any
 from dataclasses import dataclass, asdict
@@ -562,7 +564,7 @@ $$
             content += f"{ref}\n"
         with open(output_path, 'w', encoding='utf-8') as f:
             f.write(content)
-        print(f"论文草稿已保存到: {output_path}")
+        logger.info(f"论文草稿已保存到: {output_path}")
 
     def save_docx(self, paper: PaperStructure, output_path: str):
         """
@@ -606,7 +608,7 @@ $$
         out_path = Path(output_path)
         out_path.parent.mkdir(parents=True, exist_ok=True)
         doc.save(str(out_path))
-        print(f"论文 DOCX 已保存到: {out_path}")
+        logger.info(f"论文 DOCX 已保存到: {out_path}")
 
     def _append_chapter_to_docx(self, doc, chapter):
         """将 Markdown 风格章节内容追加到 docx（按 '#' 层级生成标题，其余作为段落）。"""
@@ -659,7 +661,7 @@ $$
         output_path.parent.mkdir(parents=True, exist_ok=True)
         with open(output_path, 'w', encoding='utf-8') as f:
             f.write(md_content)
-        print(f"论文撰写报告已保存到: {output_path}")
+        logger.info(f"论文撰写报告已保存到: {output_path}")
 
 
 def main():
@@ -707,28 +709,29 @@ def main():
         "figures": [{"title": "预测vs真实", "type": "scatter"}, {"title": "残差分布", "type": "histogram"}]
     }
 
-    print("=" * 60)
-    print("论文撰写示例")
-    print("=" * 60)
+    logger.info("=" * 60)
+    logger.info("论文撰写示例")
+    logger.info("=" * 60)
     writer = PaperWriter()
     result = writer.generate_paper(problem_analysis, model_selection, {},
                                    solving_results, validation_results, visualization_results,
                                    output_dir="output/paper")
-    print(f"总字数: {result.metadata.get('total_word_count', 0)}")
-    print(f"章节数: {len(result.paper_structure.chapters)}")
-    print(f"输出路径: {result.output_path}")
+    logger.info(f"总字数: {result.metadata.get('total_word_count', 0)}")
+    logger.info(f"章节数: {len(result.paper_structure.chapters)}")
+    logger.info(f"输出路径: {result.output_path}")
 
     # 尝试 docx；缺失则明确说明降级
     try:
         writer.save_docx(result.paper_structure, "output/paper/paper.docx")
     except ImportError as e:
-        print(f"[说明] 未生成 docx：{e}")
+        logger.info(f"[说明] 未生成 docx：{e}")
 
     writer.generate_report_md(result, "output/paper_writing_report.md")
-    print("=" * 60)
-    print("论文撰写完成！")
-    print("=" * 60)
+    logger.info("=" * 60)
+    logger.info("论文撰写完成！")
+    logger.info("=" * 60)
 
 
 if __name__ == "__main__":
+    logging.basicConfig(level=logging.INFO, format="%(message)s")
     main()
