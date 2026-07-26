@@ -52,6 +52,9 @@ output/
 # 性能基准结果
 benchmarks/results/
 
+# 运行产物（基准报告等，非源码不入库）
+results/
+
 # 临时验证脚本
 _verify_*.py
 _verify_*.py.tmp
