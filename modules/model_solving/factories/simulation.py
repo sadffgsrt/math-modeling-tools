@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 仿真类模型求解器（category: simulation）
 真实实现（纯 Python）：蒙特卡洛、元胞自动机(Game of Life)、排队论(M/M/c)、系统动力学(RK4)。

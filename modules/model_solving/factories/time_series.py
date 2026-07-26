@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 时间序列类模型求解器（category: time_series）
 arima：优先使用 statsmodels；若环境未安装则清晰抛出 ImportError（诚实）。

@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 聚类类模型求解器（category: clustering）
 真实实现（纯 Python）：K-means（Lloyd 算法）。

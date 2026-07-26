@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 图论类模型求解器（category: graph_theory）
 真实实现（纯 Python）：Dijkstra 最短路、最大流(Edmonds-Karp)。

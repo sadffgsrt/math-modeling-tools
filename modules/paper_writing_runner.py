@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # 论文撰写阶段薄包装 runner（main.py 通过 modules.paper_writing_runner 调用）
 # 职责：聚合上游各阶段真实结果 → PaperWriter 生成论文 → 优先写 .docx 到
 #       workflow.project_dir/"paper"；若 python-docx 缺失则降级为 markdown 并清晰说明。

@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # 题目解析阶段薄包装 runner（main.py 通过 modules.problem_analysis_runner 调用）
 # 职责：定位题目文件 → ProblemAnalyzer 分析 → 转换为扁平 dict 供 main.py 与各下游阶段消费
 

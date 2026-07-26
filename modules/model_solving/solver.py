@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 模型求解模块 (Module 04) - 基础求解器
 移植自 v3.0 蓝本（备份/工作流/modules/04_model_solving/solver.py），保留真实求解逻辑：

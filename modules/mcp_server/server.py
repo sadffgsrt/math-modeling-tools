@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 MCP Server 实现（恢复版重建 · v3.4.2）
 基于 Python stdlib http.server，无需第三方依赖。

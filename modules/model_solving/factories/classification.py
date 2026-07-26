@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 分类类模型求解器（category: classification）
 真实实现（纯 Python）：逻辑回归（梯度下降）。

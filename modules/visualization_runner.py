@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # 可视化阶段薄包装 runner（main.py 通过 modules.visualization_runner 调用）
 # 职责：从上游阶段（数据处理 / 模型求解）获取真实数据 → ModelVisualizer 生成 png
 #       → 图表写入 workflow.project_dir/"figures" → 返回 dict（含 figures 列表与 status）

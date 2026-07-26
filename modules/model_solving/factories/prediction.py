@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 预测类模型求解器（category: prediction）
 真实实现（纯 Python）：灰色预测 GM(1,1)。

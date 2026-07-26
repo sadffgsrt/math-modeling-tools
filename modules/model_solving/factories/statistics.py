@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 统计分析模型求解器（category: statistics）
 真实实现（纯 Python）：单因素方差分析(ANOVA, F 检验含数值积分求 p 值)、指数平滑(Holt 线性趋势)。

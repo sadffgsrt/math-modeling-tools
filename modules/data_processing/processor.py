@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # 数据处理模块 (Module 03)
 # 功能：数据清洗、缺失值处理、特征工程及可视化分析，输出标准化数据集
 # 说明：从 v3.0 蓝本（03_data_processing/processor.py）忠实移植，去掉数字前缀 import，类与接口不变。

@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 模型求解工厂 - 基础模块（factories/_base）
 

@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # 验证阶段薄包装 runner（main.py 通过 modules.validation_runner 调用）
 # 职责：从上游（数据处理 / 模型求解）获取真实数据 → DataValidator / ModelValidator
 #       执行真实校验 → 返回 dict（含 status 与各项指标）。

@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 模型求解运行器（顶层模块 modules.model_solving_runner）
 供 main.py 等工作流调用：

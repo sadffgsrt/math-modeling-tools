@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 factories 包：汇总各分类求解器，并暴露注册表。
 导入本模块会触发所有分类模块的 register_category 调用，从而填充

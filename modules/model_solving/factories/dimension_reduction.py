@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 降维类模型求解器（category: dimension_reduction）
 真实实现（纯 Python）：PCA（协方差矩阵 + 幂迭代求主成分）。

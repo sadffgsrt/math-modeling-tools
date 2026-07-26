@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 元启发式优化模型求解器（category: optimization_meta）
 真实实现（纯 Python）：差分进化(DE)、遗传算法(GA)。

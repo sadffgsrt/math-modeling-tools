@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 论文撰写模块 (Module 07) —— 从 v3.0 蓝本 07_paper_writing/writer.py 忠实移植
 功能：按照 CUMCM 标准格式自动生成摘要、模型假设、求解过程、结果分析与模型评价各章节。

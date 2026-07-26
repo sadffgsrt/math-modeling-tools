@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 模型求解工厂包（modules.model_solving）
 暴露核心 API：

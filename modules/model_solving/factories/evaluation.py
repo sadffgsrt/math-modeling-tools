@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 评价类模型求解器（category: evaluation）
 全部用纯 Python 真实实现：AHP / TOPSIS / 熵权法 / 综合评价 / 灰色关联 / 模糊综合评价。

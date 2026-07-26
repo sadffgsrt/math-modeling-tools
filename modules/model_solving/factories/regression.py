@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 回归类模型求解器（category: regression）
 真实实现的纯 Python 算法：普通最小二乘(OLS)、岭回归(Ridge)、Lasso(坐标下降)。

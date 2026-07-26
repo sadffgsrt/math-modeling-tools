@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 调度器（dispatcher）
 提供 dispatch_model(model_id, **params) 统一入口，委托 ModelFactory.solve。

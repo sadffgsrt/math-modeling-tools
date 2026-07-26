@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # 题目解析模块 (Module 01)
 # 功能：解析竞赛题目，提取题目类型、变量、约束、目标与子问题等结构化信息
 # 说明：本文件从 v3.0 蓝本（01_problem_analysis/analyzer.py）忠实移植，去掉数字前缀 import，

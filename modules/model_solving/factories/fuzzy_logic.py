@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 模糊逻辑类模型求解器（category: fuzzy_logic）
 模糊推理 / 模糊聚类需要 scikit-fuzzy 等库，诚实声明未实现。

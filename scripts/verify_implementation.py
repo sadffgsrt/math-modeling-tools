@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 深度核查脚本 v2：验证 catalog 中 implemented=true 的每个模型在代码中确实有真实分支
 - 检查 1: model_id (或其别名) 必须出现在 MODEL_CATEGORY_MAP

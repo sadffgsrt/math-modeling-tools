@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 优化类模型求解器（category: optimization）
 真实实现（纯 Python）：线性规划(单纯形 / scipy)、动态规划(背包/LCS)、模拟退火。

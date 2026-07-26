@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 结果可视化模块 (Module 05) —— 从 v3.0 蓝本 05_visualization/visualizer.py 忠实移植
 功能：生成图表（预测值 vs 真实值、残差、特征重要性、数据分布、相关性热力图、

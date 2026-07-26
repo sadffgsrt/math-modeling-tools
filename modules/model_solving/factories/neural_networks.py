@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 神经网络类模型求解器（category: neural_networks）
 MLP / CNN / 神经网络均需要 sklearn 或 tensorflow / pytorch，诚实声明未实现。

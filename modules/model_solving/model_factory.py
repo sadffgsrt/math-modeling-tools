@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 模型工厂（ModelFactory）
 职责：

@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 MCP Server 模块（恢复版重建 · v3.4.2）
 将工作流暴露为 MCP（Model Context Protocol）兼容服务，

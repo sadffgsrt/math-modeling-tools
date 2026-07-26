@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # 模型选型阶段薄包装 runner（main.py 通过 modules.model_selection_runner 调用）
 # 职责：获取题目分析上下文（复用 problem_analysis 结果或重新分析）→ ModelSelector 选型 → 扁平 dict
 

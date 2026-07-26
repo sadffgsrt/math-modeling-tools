@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # 数据处理阶段薄包装 runner（main.py 通过 modules.data_processing_runner 调用）
 # 职责：扫描 raw_data 数据文件 → DataProcessor 处理 → 写入 processed_data → 返回 ProcessingResult.asdict()
 

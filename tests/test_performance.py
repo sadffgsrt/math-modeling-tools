@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 性能基准测试模块的单元测试
 验证 PerformanceBenchmark 的功能正确性（不测试实际性能数值）

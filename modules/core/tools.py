@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 工具协议基元模块 (tools.py)
 提供统一的工具抽象与注册表，供 LLM Agent / ToolProtocolAdapter 等模块复用。
