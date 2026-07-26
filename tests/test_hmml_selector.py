@@ -56,7 +56,8 @@ class TestHierarchicalSelector(TestCase):
         self.assertTrue(len(sel.ranked_methods) > 0)
 
     def test_save(self):
-        import tempfile, json
+        import tempfile
+        import json
         sel = self.sel.retrieve("综合评价", data_features={"is_evaluation": True}, top_k=3)
         with tempfile.TemporaryDirectory() as d:
             p = Path(d) / "out.json"
