@@ -8,6 +8,7 @@ from .agent import (
     create_llm_agent,
     run_with_llm,
 )
+from .llm_client import LLMClient, create_llm_client, load_llm_config
 
 __all__ = [
     "run_with_llm",
@@ -15,4 +16,7 @@ __all__ = [
     "AgentMemory",
     "LLMAgent",
     "create_llm_agent",
+    "LLMClient",
+    "create_llm_client",
+    "load_llm_config",
 ]

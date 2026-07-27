@@ -71,3 +71,9 @@ _verify_*.py.tmp
 .pytest_cache/
 .coverage
 htmlcov/
+
+# LLM 本地配置（含 API key，严禁提交）
+.env
+.env.local
+config/llm_config.local.yaml
+

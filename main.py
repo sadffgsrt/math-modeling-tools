@@ -511,11 +511,45 @@ def main():
                         help="非交互模式：所有审批自动批准（用于测试/CI 环境）")
     parser.add_argument("--gallery", action="store_true",
                         help="可视化阶段完成后生成可浏览的 HTML 画廊（经 Web UI 的 /gallery 查看）")
+    parser.add_argument("--agent", action="store_true",
+                        help="Agent 模式：题目→方法选择→求解→反思自主运行")
+    parser.add_argument("--mode", default="rule_fallback",
+                        choices=["rule_fallback", "hybrid", "pure_llm"],
+                        help="Agent 模式（hybrid/pure_llm 需配置 LLM API key）")
+    parser.add_argument("--problem", default=None,
+                        help="题目文本（agent 模式；未指定则交互输入）")
+    parser.add_argument("--llm-config", default=None,
+                        help="LLM 配置文件路径（默认 config/llm_config.yaml）")
+    parser.add_argument("--data-path", default=None,
+                        help="数据文件路径（agent 求解时使用）")
     args = parser.parse_args()
 
     wf = MathModelingWorkflow(args.project, no_cache=args.no_cache,
                               non_interactive=args.non_interactive)
     wf.gallery = args.gallery
+    if args.agent:
+        from modules.llm_agent.agent import create_llm_agent
+        from modules.llm_agent.llm_client import create_llm_client
+        problem = args.problem
+        if not problem:
+            try:
+                problem = input("请输入题目文本: ").strip()
+            except EOFError:
+                problem = ""
+        if not problem:
+            logger.error("题目文本不能为空（用 --problem 指定）")
+        else:
+            llm_client = create_llm_client(wf, config_path=args.llm_config, mode=args.mode)
+            agent = create_llm_agent(wf, mode=args.mode, llm_call=llm_client)
+            result = agent.run(problem, data_path=args.data_path)
+            logger.info(f"\n{'='*40}\nAgent 完成\n{'='*40}")
+            logger.info(f"模式: {result['mode']}  成功: {result['success']}")
+            logger.info(f"工具调用: {len(result.get('tool_calls', []))} 次")
+            for tc in result.get("tool_calls", []):
+                logger.info(f"  - {tc.get('tool_name', tc.get('name', '?'))}: {tc.get('status', '?')}")
+            refl = result.get("reflection", {})
+            logger.info(f"反思评分: {refl.get('score', '?')}/10  状态: {refl.get('status', '?')}")
+        return
     if args.status:
         wf.print_status()
     elif args.performance:
