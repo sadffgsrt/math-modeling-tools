@@ -290,71 +290,46 @@ class ToolProtocolAdapter:
     def _solve(self, model_id: str, category: str, model_name: str,
                params: Dict, data_path: Path) -> Dict:
         """
-        根据类别调用 modules.model_solving 中的真实求解器。
+        调用 modules.model_solving 中真实可跑的求解入口 ModelFactory.solve。
 
-        延迟导入说明（恢复版重建依赖声明）：
-          依赖 modules.model_solving 提供的 ModelFactory（构建并训练模型）
-          与 ModelSolver（计算指标）。若 model_solving 仅暴露 ModelSolver，
-          而 ModelFactory 位于 modules.model_factory，则自动回退。
+        恢复版修复（关键）：
+          旧实现误调用了从未在 model_solving 中落地的 build_supervised() +
+          ModelSolver.solve_model()，导致所有模型（含已实现的回归/聚类等）在工具
+          调用路径上统一抛 AttributeError，真内核被完全挡在门外。model_solving 实际
+          对外暴露的唯一可跑入口是 ModelFactory.solve(model_id, **params)
+          （内部 build_model -> solver.solve），本方法改走此路径，使已实现的模型
+          真正返回 200 真解。
+          未实现的模型（solver.solve 抛 NotImplementedError）会如实向上抛出，
+          MCP 层据此返回 501，符合项目"诚实标注 stub"的设计意图。
         """
-        # 延迟导入：优先 modules.model_solving（契约约定其提供 ModelFactory）
-        from modules import model_solving  # noqa: F401
-        ModelSolver = model_solving.ModelSolver
-        try:
-            ModelFactory = model_solving.ModelFactory
-        except AttributeError:
-            from modules.model_factory import ModelFactory  # 回退路径
+        from modules import model_solving
+        ModelFactory = model_solving.ModelFactory
 
-        # 读取数据
-        import pandas as pd
-        df = pd.read_csv(data_path)
+        # 延迟创建并缓存工厂实例（默认 catalog 路径解析到 config/model_catalog.json）
+        if getattr(self, "_mf", None) is None:
+            self._mf = ModelFactory()
+        mf = self._mf
 
-        if category in ("regression", "classification", "clustering", "dimension_reduction"):
-            target_col = params.get("target_column")
-            if target_col is None:
-                target_col = "target" if "target" in df.columns else df.columns[-1]
-            feature_cols = [c for c in df.columns if c != target_col]
-            X = df[feature_cols].values
-            if category == "clustering":
-                y = df[target_col].values if target_col in df.columns else None
-            else:
-                y = df[target_col].values
+        # 透传调用方参数；为 AHP 提供 judgment_matrix_path -> matrix 的桥接
+        solve_params: Dict[str, Any] = dict(params)
+        if model_id == "ahp" and "judgment_matrix_path" in solve_params:
+            try:
+                with open(solve_params["judgment_matrix_path"], "r", encoding="utf-8") as fh:
+                    solve_params.setdefault("matrix", json.load(fh))
+            except Exception:
+                pass  # 载入失败则交给底层求解器诚实报错
 
-            # 真实构建并训练模型
-            if category == "clustering":
-                model, mtype = ModelFactory.build_supervised(model_id, X, y)
-            else:
-                model, mtype = ModelFactory.build_supervised(model_id, X, y)
+        # 真实求解（禁止伪造）
+        result = mf.solve(model_id, **solve_params)
 
-            # 真实求解并计算指标
-            solver = ModelSolver()
-            solve_result = solver.solve_model(
-                model, X, y,
-                model_name=model_name,
-                feature_names=list(feature_cols),
-            )
-
-            metrics = self._extract_metrics(solve_result)
-            feature_importance = self._to_json_safe(
-                getattr(solve_result, "feature_importance", None)
-            )
-
-            return {
-                "model_name": model_name,
-                "model_id": model_id,
-                "model_category": category,
-                "metrics": metrics,
-                "feature_importance": feature_importance,
-                "n_samples": int(len(df)),
-            }
-        else:
-            # 其它类别（优化/评价/时序/仿真/图论/模糊/统计/神经网络等）需对应 Solver；
-            # 此处如实抛出未实现，避免伪造结果。对应求解器由 model_solving 子代理按
-            # 类别提供（OptimizationSolver / EvaluationSolver / TimeSeriesSolver 等）。
-            raise NotImplementedError(
-                f"工具 {model_id}（类别 {category}）的求解需对应 Solver，"
-                f"当前环境未加载该类别求解器"
-            )
+        # 归一化返回结构，保证含 model_category / model_name / status
+        if not isinstance(result, dict):
+            result = {"result": result}
+        result.setdefault("model_id", model_id)
+        result.setdefault("model_category", category)
+        result.setdefault("model_name", model_name)
+        result.setdefault("status", "success")
+        return result
 
     @staticmethod
     def _extract_metrics(solve_result: Any) -> Dict:
