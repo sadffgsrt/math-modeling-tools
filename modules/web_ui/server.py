@@ -262,11 +262,24 @@ class _WebUIRequestHandler(BaseHTTPRequestHandler):
         if not text:
             self._send_json(200, {"error": "题目文本不能为空，请提供 problem_text"})
             return
-        self._send_json(200, {
-            "success": True,
-            "problem_text": text,
-            "message": "题目分析任务已提交",
-        })
+        # 统一执行通道：经主阶段 workflow.run_stage 执行题目解析，
+        # 与 CLI 主线共享审批 / 状态机 / 缓存（非交互模式自动批准）。
+        wf = self.server.owner.workflow
+        try:
+            result = wf.run_stage("problem_analysis", problem_text=text)
+            self._send_json(200, {
+                "success": True,
+                "problem_text": text,
+                "result": result,
+                "message": "题目分析已完成（主阶段通道）",
+            })
+        except Exception as e:
+            self._send_json(200, {
+                "success": False,
+                "problem_text": text,
+                "error": str(e),
+                "message": "题目分析执行失败",
+            })
 
     def _handle_upload(self, raw: bytes, content_type: str):
         owner = self.server.owner

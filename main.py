@@ -39,6 +39,7 @@ def timing_decorator(func):
 # - ApprovalManager 已拆分到 modules/approval/manager.py
 from modules.core.cache import WorkflowCache
 from modules.approval import ApprovalManager
+from modules.stage_planner import plan as _plan_stages, PLANS as _STAGE_PLANS
 
 
 def setup_logger(project_dir: Path) -> logging.Logger:
@@ -81,14 +82,8 @@ class MathModelingWorkflow:
         "paper_writing": "论文撰写",
     }
 
-    # 执行路径配置表（替代硬编码 if-elif）
-    EXECUTION_PATHS = {
-        "optimization": ["data_processing", "model_solving", "validation", "paper_writing"],
-        "prediction": ["data_processing", "model_solving", "visualization", "validation", "paper_writing"],
-        "classification": ["data_processing", "model_solving", "visualization", "validation", "paper_writing"],
-        "simulation": ["data_processing", "model_solving", "visualization", "validation", "paper_writing"],
-        "comprehensive": ["data_processing", "model_solving", "visualization", "validation", "paper_writing"],
-    }
+    # 执行路径配置表（单一真相见 modules.stage_planner；此处引用该权威来源，避免再次硬编码）
+    EXECUTION_PATHS = _STAGE_PLANS
 
     # 模块配置路径
     CONFIG_DIR = Path(__file__).parent / "config"
@@ -415,7 +410,7 @@ class MathModelingWorkflow:
         self.logger.info(f"\n{'='*60}\n【执行阶段】\n{'='*60}")
         problem_type = results.get("problem_analysis", {}).get("problem_type", "comprehensive")
         complexity = results.get("problem_analysis", {}).get("difficulty", "medium")
-        execution_path = self.EXECUTION_PATHS.get(problem_type, self.EXECUTION_PATHS["comprehensive"])
+        execution_path = _plan_stages(problem_type)
         self.logger.info(f"\n执行路径: {problem_type} + {complexity}复杂度  共 {len(execution_path)} 个阶段")
 
         for stage in execution_path:

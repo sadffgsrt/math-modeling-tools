@@ -460,15 +460,13 @@ class LLMAgent:
 
     # ── 规则阶段决策 ──
     def _decide_stages_by_rule(self, problem_type: str) -> List[str]:
-        """根据题型决定执行阶段序列。
+        """根据题型决定执行阶段序列（委托单一真相 modules.stage_planner）。
 
-        恢复版重建：优化类不含 visualization；预测/回归/分类等含 visualization。
+        历史：优化类不含 visualization；预测/回归/分类等含 visualization。
+        现统一收敛到 StagePlanner.plan，消除与 CLI 主线（EXECUTION_PATHS）的顺序漂移。
         """
-        base = ["data_processing", "model_solving", "validation", "paper_writing"]
-        if problem_type == "optimization":
-            return base  # 不含 visualization
-        # 预测 / 回归 / 分类等需要结果可视化
-        return base[:3] + ["visualization", "paper_writing"]
+        from modules.stage_planner import plan as _plan_stages
+        return _plan_stages(problem_type)
 
     # ── HITL 关键步骤审批（P2）──
     def _request_step_approval(self, step: str, risk_level: str, description: str) -> bool:
