@@ -522,6 +522,10 @@ def main():
                         help="LLM 配置文件路径（默认 config/llm_config.yaml）")
     parser.add_argument("--data-path", default=None,
                         help="数据文件路径（agent 求解时使用）")
+    parser.add_argument("--mcp", action="store_true",
+                        help="启动 MCP 服务，外部 agent 可经 /tools 调用平台 53 个工具")
+    parser.add_argument("--mcp-port", type=int, default=8090, help="MCP 服务端口")
+    parser.add_argument("--mcp-key", default=None, help="MCP 认证 key（可选）")
     args = parser.parse_args()
 
     wf = MathModelingWorkflow(args.project, no_cache=args.no_cache,
@@ -549,6 +553,26 @@ def main():
                 logger.info(f"  - {tc.get('tool_name', tc.get('name', '?'))}: {tc.get('status', '?')}")
             refl = result.get("reflection", {})
             logger.info(f"反思评分: {refl.get('score', '?')}/10  状态: {refl.get('status', '?')}")
+        return
+    if args.mcp:
+        from modules.mcp_server import create_mcp_server
+        server = create_mcp_server(wf, host="127.0.0.1",
+                                    port=args.mcp_port, api_key=args.mcp_key)
+        server.start_background()
+        logger.info(f"\n{'='*40}\nMCP 服务已启动\n{'='*40}")
+        logger.info(f"地址: http://127.0.0.1:{args.mcp_port}")
+        logger.info(f"端点: GET /tools | GET /tools/<name> | POST /tools/<name>/call | POST /mcp")
+        logger.info(f"工具数: {len(server.list_tools())}")
+        if args.mcp_key:
+            logger.info("认证: 已启用（请求需带 Authorization: Bearer <key> 或 ?api_key=<key>）")
+        logger.info("按 Ctrl+C 退出...")
+        import time
+        try:
+            while server.is_running():
+                time.sleep(1)
+        except KeyboardInterrupt:
+            logger.info("\n正在停止 MCP 服务...")
+            server.stop()
         return
     if args.status:
         wf.print_status()

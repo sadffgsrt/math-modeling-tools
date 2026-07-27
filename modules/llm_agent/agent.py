@@ -227,7 +227,8 @@ class AgentMemory:
         )
 
     def search_similar(self, query: str) -> List[Dict[str, Any]]:
-        """检索相似记忆：成功优先，其次按反思综合分降序。"""
+        """检索相似记忆：子串命中优先（保持兼容），无命中时用 TF-IDF 余弦相似兜底。
+        排序：成功优先，其次反思综合分降序。"""
         q = (query or "").lower()
         matched = [
             m for m in self._memories
@@ -235,6 +236,8 @@ class AgentMemory:
                 (m.get("problem_type", "") + m.get("tool_used", "") + m.get("result_summary", "")).lower()
             )
         ]
+        if not matched and self._memories and q:
+            matched = self._tfidf_search(q)
         matched.sort(
             key=lambda m: (
                 not m.get("success", False),
@@ -242,6 +245,55 @@ class AgentMemory:
             )
         )
         return matched
+
+    @staticmethod
+    def _tokenize(text: str) -> List[str]:
+        """分词：英文词 + 中文 2-gram（纯 Python，无重依赖）。"""
+        import re
+        text = (text or "").lower()
+        tokens = re.findall(r"[a-z]{2,}", text)
+        cjk = re.findall(r"[\u4e00-\u9fff]", text)
+        tokens += [cjk[i] + cjk[i + 1] for i in range(len(cjk) - 1)]
+        return tokens
+
+    def _tfidf_search(self, query: str, top_n: int = 10) -> List[Dict[str, Any]]:
+        """TF-IDF 余弦相似检索（无子串命中时兜底，纯 Python 实现）。"""
+        import math
+        docs = [
+            self._tokenize(m.get("problem_type", "") + " " + m.get("tool_used", "")
+                           + " " + m.get("result_summary", ""))
+            for m in self._memories
+        ]
+        q_tokens = self._tokenize(query)
+        if not q_tokens or not self._memories:
+            return []
+        vocab = set(q_tokens)
+        for d in docs:
+            vocab.update(d)
+        N = len(docs) + 1
+        df = {t: 0 for t in vocab}
+        for d in docs:
+            for t in set(d):
+                if t in df:
+                    df[t] += 1
+        idf = {t: math.log(N / (df[t] + 1)) + 1 for t in vocab}
+        q_tf = {}
+        for t in q_tokens:
+            q_tf[t] = q_tf.get(t, 0) + 1
+        q_vec = {t: q_tf[t] * idf[t] for t in q_tf}
+        q_norm = math.sqrt(sum(v * v for v in q_vec.values())) or 1.0
+        scores = []
+        for i, d in enumerate(docs):
+            d_tf = {}
+            for t in d:
+                d_tf[t] = d_tf.get(t, 0) + 1
+            d_vec = {t: d_tf[t] * idf.get(t, 0) for t in d_tf}
+            d_norm = math.sqrt(sum(v * v for v in d_vec.values())) or 1.0
+            dot = sum(q_vec.get(t, 0) * d_vec.get(t, 0) for t in q_vec if t in d_vec)
+            sim = dot / (q_norm * d_norm)
+            scores.append((sim, i))
+        scores.sort(key=lambda x: -x[0])
+        return [self._memories[i] for sim, i in scores[:top_n] if sim > 0]
 
     def get_best_practice(self, problem_type: str) -> Optional[Dict[str, Any]]:
         """返回指定题型下的最佳实践（成功且反思分最高），无则返回 None。"""
