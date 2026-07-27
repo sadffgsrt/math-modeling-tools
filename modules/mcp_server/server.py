@@ -96,6 +96,9 @@ class MCPRequestHandler(BaseHTTPRequestHandler):
             self._send_json(200, response)
         except KeyError as e:
             self._send_json(404, {"error": str(e)})
+        except NotImplementedError as e:
+            server.logger.warning(f"GET {path} 未实现: {e}")
+            self._send_json(501, {"error": f"未实现: {e}"})
         except (ValueError, TypeError, RuntimeError, OSError, KeyError) as e:
             server.logger.error(f"GET {path} 失败: {type(e).__name__}: {e}")
             self._send_json(500, {"error": f"内部错误: {type(e).__name__}: {e}"})
@@ -145,7 +148,10 @@ class MCPRequestHandler(BaseHTTPRequestHandler):
             self._send_json(400, {"error": str(e)})
         except FileNotFoundError as e:
             self._send_json(404, {"error": str(e)})
-        except (ValueError, TypeError, RuntimeError, OSError, KeyError) as e:
+        except NotImplementedError as e:
+            server.logger.warning(f"POST {path} 未实现: {e}")
+            self._send_json(501, {"error": f"未实现: {e}"})
+        except (ValueError, TypeError, RuntimeError, OSError, KeyError, AttributeError) as e:
             server.logger.error(f"POST {path} 失败: {type(e).__name__}: {e}")
             self._send_json(500, {"error": f"内部错误: {type(e).__name__}: {e}"})
 
