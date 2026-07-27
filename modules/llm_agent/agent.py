@@ -155,6 +155,76 @@ class ReflectionEngine:
             "evaluation_method": "rule_based",
         }
 
+    # ── LLM 深度 critique（P2，可选）──
+    def _build_critique_prompt(self, problem_analysis: Dict[str, Any],
+                               tool_calls: List[Dict[str, Any]],
+                               stages: List[Dict[str, Any]],
+                               rule_reflection: Dict[str, Any]) -> str:
+        """构造 LLM 深度批判的结构化 prompt（自研，未复制 MM-Agent 提示词）。"""
+        pt = (problem_analysis or {}).get("problem_type", "未知")
+        calls_desc = []
+        for t in (tool_calls or []):
+            status = t.get("status")
+            name = t.get("tool_name")
+            res = t.get("result") or {}
+            brief = "失败" if status != "success" else (
+                f"成功(model_category={res.get('model_category')}, "
+                f"r2={res.get('r2')}, weights={res.get('weights')})"
+            )
+            calls_desc.append(f"- {name}: {brief}")
+        if not calls_desc:
+            calls_desc.append("- (无工具调用)")
+        rule_score = (rule_reflection or {}).get("overall_score", "n/a")
+        return (
+            "你是一位严谨的数学建模评审专家。请基于以下本轮建模执行信息，给出深度批判与可执行的改进建议。\n"
+            f"【题型】{pt}\n"
+            f"【已完成阶段】{[s.get('name') for s in (stages or [])]}\n"
+            f"【工具调用】\n" + "\n".join(calls_desc) + "\n"
+            f"【规则反思综合分】{rule_score}\n"
+            "请从方法选择合理性、结果可信度、潜在假设风险、下一步优化方向四个角度撰写 critique，"
+            "使用中文，控制在 200 字以内。"
+        )
+
+    def deep_critique(self, problem_analysis: Dict[str, Any],
+                      tool_calls: List[Dict[str, Any]],
+                      stages: List[Dict[str, Any]],
+                      rule_reflection: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+        """可选 LLM 深度 critique。
+
+        仅当构造时传入 llm_call 才触发；调用异常 / 无响应 / 未配置时
+        优雅降级（method 标记原因，不影响主流程）。返回结构：
+        - method: "llm" | "rule_based_only" | "llm_failed" | "llm_empty"
+        - available: bool
+        - critique: str（仅 llm 成功时）
+        """
+        if self.llm_call is None:
+            return {
+                "method": "rule_based_only",
+                "available": False,
+                "note": "未配置 llm_call，跳过 LLM 深度 critique（保持规则反思）",
+            }
+        prompt = self._build_critique_prompt(problem_analysis, tool_calls, stages, rule_reflection)
+        req = {"role": "reflection", "problem_text": prompt,
+               "problem_analysis": problem_analysis, "history": []}
+        try:
+            resp = self.llm_call(req)
+        except Exception:
+            return {"method": "llm_failed", "available": False,
+                    "note": "LLM 调用异常，退化为规则反思"}
+        if not isinstance(resp, dict):
+            return {"method": "llm_failed", "available": False,
+                    "note": "LLM 返回非预期结构，退化为规则反思"}
+        content = (resp.get("content") or "").strip()
+        if not content:
+            return {"method": "llm_empty", "available": False,
+                    "note": "LLM 未返回 critique 文本，退化为规则反思"}
+        return {
+            "method": "llm",
+            "available": True,
+            "critique": content,
+            "raw_tool_calls": resp.get("tool_calls") or [],
+        }
+
     def suggest_next_action(self, reflection: Dict[str, Any]) -> Dict[str, Any]:
         """根据反思综合分建议下一步行动。
 
@@ -337,7 +407,8 @@ class LLMAgent:
     恢复版重建：hybrid / pure_llm 在无 llm_call 时按契约自动降级为 rule_fallback。
     """
 
-    def __init__(self, workflow: Any, mode: str = "rule_fallback", llm_call: Optional[Any] = None):
+    def __init__(self, workflow: Any, mode: str = "rule_fallback", llm_call: Optional[Any] = None,
+                 approval_manager: Optional[Any] = None, history: Optional[List[Dict]] = None):
         if mode not in _VALID_MODES:
             raise ValueError(f"不支持的 mode: {mode!r}，可选值：{_VALID_MODES}")
         self.workflow = workflow
@@ -349,6 +420,12 @@ class LLMAgent:
             self.mode = mode
         self._adapter = None
         self._run_success = True
+        # HITL：人工审批管理器（优先显式传入，否则复用 workflow 的 approval_manager）
+        self.approval_manager = approval_manager or getattr(workflow, "approval_manager", None)
+        # 多轮对话上下文（P2）：本 run 内的对话历史
+        self.conversation: List[Dict[str, Any]] = list(history or [])
+        # 本次运行的审批记录
+        self._approvals: List[Dict[str, Any]] = []
 
     # ── 题目解析 ──
     def _analyze(self, text: str) -> Dict[str, Any]:
@@ -393,6 +470,71 @@ class LLMAgent:
         # 预测 / 回归 / 分类等需要结果可视化
         return base[:3] + ["visualization", "paper_writing"]
 
+    # ── HITL 关键步骤审批（P2）──
+    def _request_step_approval(self, step: str, risk_level: str, description: str) -> bool:
+        """在关键步骤请求人工审批。
+
+        复用 workflow.approval_manager（register_operation + request_approval）：
+        - 无 approval_manager：自动批准（向后兼容，纯库调用场景）
+        - 非交互模式 / 低风险：审批管理器自动批准
+        - 已注入回调（如 MCP /approve 或 CLI 交互）：由回调决定
+        返回 True=批准执行，False=阻断。审批结果记录到 self._approvals。
+        """
+        am = self.approval_manager
+        if am is None:
+            self._approvals.append({
+                "step": step, "risk_level": risk_level,
+                "status": "auto_approved", "approved_by": "NoApprovalManager",
+                "approved": True,
+            })
+            return True
+        op = am.register_operation(
+            operation_id=f"agent_{step}_{datetime.now().strftime('%Y%m%d%H%M%S%f')}",
+            operation_type="agent_step",
+            description=description,
+            risk_level=risk_level,
+            command=f"agent.run:{step}",
+            source="Agent",
+        )
+        approved = bool(am.request_approval(op))
+        self._approvals.append({
+            "step": step,
+            "risk_level": risk_level,
+            "status": op.get("status"),
+            "approved_by": op.get("approved_by"),
+            "approved": approved,
+        })
+        return approved
+
+    # ── 对话上下文辅助（P2）──
+    def _summarize_turn(self, result: Dict[str, Any]) -> str:
+        """生成本轮 assistant 摘要，写入 conversation 历史。"""
+        mode = result.get("mode", "?")
+        success = result.get("success")
+        pt = (result.get("problem_analysis") or {}).get("problem_type", "?")
+        n_calls = len(result.get("tool_calls") or [])
+        score = (result.get("reflection") or {}).get("overall_score")
+        flag = "成功" if success else "未完成"
+        summary = f"[Agent {mode}] 题型={pt} 执行{flag}，工具调用 {n_calls} 次"
+        if score is not None:
+            summary += f"，反思综合分={score}"
+        return summary
+
+    def _save_conversation(self) -> None:
+        """持久化对话上下文到 results/agent_conversation.json。"""
+        if not self.conversation:
+            return
+        results_dir = self._results_dir()
+        results_dir.mkdir(parents=True, exist_ok=True)
+        conv_file = results_dir / "agent_conversation.json"
+        try:
+            conv_file.write_text(
+                json.dumps({"conversation": self.conversation}, ensure_ascii=False, indent=2),
+                encoding="utf-8",
+            )
+        except Exception:
+            pass
+
     # ── 工具执行（统一走 ToolProtocolAdapter，真实求解）──
     def _get_adapter(self) -> Optional[Any]:
         if ToolProtocolAdapter is None:
@@ -435,7 +577,7 @@ class LLMAgent:
     # ── LLM 模型选择（hybrid）──
     def _llm_model_selection(self, text: str, problem_type: str, analysis: Dict[str, Any]) -> Optional[Dict[str, Any]]:
         req = {"role": "model_selection", "problem_type": problem_type, "problem_text": text,
-               "problem_analysis": analysis}
+               "problem_analysis": analysis, "history": list(self.conversation)}
         try:
             resp = self.llm_call(req)
         except Exception:
@@ -469,7 +611,8 @@ class LLMAgent:
     # ── pure_llm 工具调用循环（最大轮次限制）──
     def _pure_llm_loop(self, text: str, max_rounds: int = 10) -> List[Dict[str, Any]]:
         tool_calls: List[Dict[str, Any]] = []
-        history: List[Dict[str, Any]] = []
+        # 以对话上下文为初始历史，并在执行过程中累积，供多轮复用
+        history: List[Dict[str, Any]] = list(self.conversation)
         req = {"role": "agent", "problem_text": text, "history": history}
         for _ in range(max_rounds):
             try:
@@ -490,7 +633,9 @@ class LLMAgent:
                         parsed = {}
                     call_rec = self._dispatch_tool(name, parsed)
                     tool_calls.append(call_rec)
-                    history.append({"tool": name, "status": call_rec["status"]})
+                    entry = {"tool": name, "status": call_rec["status"]}
+                    history.append(entry)
+                    self.conversation.append(entry)
                 # 继续循环：LLM 可能继续 tool-calling 或给出内容结束
                 continue
             else:
@@ -557,9 +702,10 @@ class LLMAgent:
             reflection=reflection,
         )
 
-    # ── 主流程 ──
-    def run(self, problem_text: str, **kwargs: Any) -> Dict[str, Any]:
+    # ── 单轮执行（被 run / chat 复用）──
+    def _run_turn(self, problem_text: str, **kwargs: Any) -> Dict[str, Any]:
         mode = self.mode
+        self._approvals = []  # 本轮审批记录重置
 
         # 1) 题目解析
         analysis = self._analyze(problem_text)
@@ -576,34 +722,46 @@ class LLMAgent:
 
         tool_calls: List[Dict[str, Any]] = []
 
-        # 3) 模式分支
-        if mode in ("hybrid", "pure_llm") and self.llm_call is not None:
-            if mode == "hybrid":
-                # LLM 参与模型选择
-                model_decision = self._llm_model_selection(problem_text, problem_type, analysis)
-                if model_decision is not None:
-                    decisions.append(model_decision)
-                    tool_calls.extend(self._execute_llm_tools(model_decision))
-            else:  # pure_llm：全流程 tool-calling
-                llm_tools = self._pure_llm_loop(problem_text)
-                if llm_tools:
-                    decisions.append({
-                        "type": "model_selection",
-                        "problem_type": problem_type,
-                        "selected_tools": [c["tool_name"] for c in llm_tools],
-                        "execution_path": execution_path,
-                    })
-                    tool_calls.extend(llm_tools)
-                else:
-                    decisions.append({"type": "llm_driven", "execution_path": execution_path})
-        else:
-            # rule_fallback（含降级）：若含回归类特征且有数据，真实调用求解
-            tool_calls.extend(self._maybe_rule_solve(problem_text, problem_type, kwargs))
-
-        # 4) 反思（基于真实 tool_calls / stages）
-        reflection = ReflectionEngine(llm_call=self.llm_call).evaluate_result(
-            analysis, tool_calls, stages
+        # 3) HITL 关键步骤审批：执行求解前回调人工确认
+        exec_approved = self._request_step_approval(
+            "execute_solving",
+            risk_level="high" if mode == "pure_llm" else "medium",
+            description=f"Agent 准备执行建模求解（模式={mode}，题型={problem_type}）",
         )
+        if not exec_approved:
+            decisions.append({
+                "type": "blocked_by_human",
+                "reason": "人类在关键步骤『execute_solving』拒绝执行，未发起任何工具调用",
+            })
+        else:
+            # 3) 模式分支
+            if mode in ("hybrid", "pure_llm") and self.llm_call is not None:
+                if mode == "hybrid":
+                    # LLM 参与模型选择
+                    model_decision = self._llm_model_selection(problem_text, problem_type, analysis)
+                    if model_decision is not None:
+                        decisions.append(model_decision)
+                        tool_calls.extend(self._execute_llm_tools(model_decision))
+                else:  # pure_llm：全流程 tool-calling
+                    llm_tools = self._pure_llm_loop(problem_text)
+                    if llm_tools:
+                        decisions.append({
+                            "type": "model_selection",
+                            "problem_type": problem_type,
+                            "selected_tools": [c["tool_name"] for c in llm_tools],
+                            "execution_path": execution_path,
+                        })
+                        tool_calls.extend(llm_tools)
+                    else:
+                        decisions.append({"type": "llm_driven", "execution_path": execution_path})
+            else:
+                # rule_fallback（含降级）：若含回归类特征且有数据，真实调用求解
+                tool_calls.extend(self._maybe_rule_solve(problem_text, problem_type, kwargs))
+
+        # 4) 反思（规则）+ 可选 LLM 深度 critique（P2）
+        engine = ReflectionEngine(llm_call=self.llm_call)
+        reflection = engine.evaluate_result(analysis, tool_calls, stages)
+        reflection["llm_critique"] = engine.deep_critique(analysis, tool_calls, stages, reflection)
 
         # 5) 运行成功判定：题目已解析且无失败工具调用
         self._run_success = (problem_type is not None) and (
@@ -623,7 +781,35 @@ class LLMAgent:
             "tool_calls": tool_calls,
             "stages": stages,
             "reflection": reflection,
+            "approvals": list(self._approvals),
         }
+
+    # ── 主流程（单轮，支持 history 种子）──
+    def run(self, problem_text: str, **kwargs: Any) -> Dict[str, Any]:
+        history = kwargs.pop("history", None)
+        self.conversation = list(history or [])
+        result = self._run_turn(problem_text, **kwargs)
+        result["conversation"] = list(self.conversation)
+        return result
+
+    # ── 多轮对话入口（P2）──
+    def chat(self, user_message: str, **kwargs: Any) -> Dict[str, Any]:
+        """多轮对话：在已有 conversation 上追加一轮，保留上下文供 LLM 复用。
+
+        自动记录 user 轮与 assistant 摘要轮，并持久化到
+        results/agent_conversation.json。非 LLM 模式同样跟踪上下文，
+        便于后续切换到 hybrid / pure_llm 时 LLM 能看到完整历史。
+        """
+        self.conversation.append({"role": "user", "content": user_message, "timestamp": _now()})
+        result = self._run_turn(user_message, **kwargs)
+        self.conversation.append({
+            "role": "assistant",
+            "content": self._summarize_turn(result),
+            "timestamp": _now(),
+        })
+        self._save_conversation()
+        result["conversation"] = list(self.conversation)
+        return result
 
 
 # ─────────────────────────────────────────────────────────────

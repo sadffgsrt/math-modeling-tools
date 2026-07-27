@@ -241,7 +241,9 @@ class TestLLMAgent(TestCase):
         call_count = [0]
 
         def always_tool_call(request):
-            call_count[0] += 1
+            # 仅统计 agent 主循环的调用（反思 critique 也会复用同一 llm_call，单独归属）
+            if request.get("role") == "agent":
+                call_count[0] += 1
             return {
                 "tool_calls": [{
                     "id": f"call_{call_count[0]}",
@@ -257,7 +259,7 @@ class TestLLMAgent(TestCase):
         agent = LLMAgent(workflow, mode="pure_llm", llm_call=always_tool_call)
         result = agent.run(problem_text=self.problem_text)
 
-        # 应在 10 轮内停止
+        # 主循环应在 10 轮内停止
         self.assertLessEqual(call_count[0], 10)
 
     # ─── 题目输入测试 ───

@@ -513,6 +513,8 @@ def main():
                         help="可视化阶段完成后生成可浏览的 HTML 画廊（经 Web UI 的 /gallery 查看）")
     parser.add_argument("--agent", action="store_true",
                         help="Agent 模式：题目→方法选择→求解→反思自主运行")
+    parser.add_argument("--multi-turn", action="store_true",
+                        help="Agent 多轮对话模式（需配合 --agent）：在对话上下文中连续多轮建模")
     parser.add_argument("--mode", default="rule_fallback",
                         choices=["rule_fallback", "hybrid", "pure_llm"],
                         help="Agent 模式（hybrid/pure_llm 需配置 LLM API key）")
@@ -534,6 +536,45 @@ def main():
     if args.agent:
         from modules.llm_agent.agent import create_llm_agent
         from modules.llm_agent.llm_client import create_llm_client
+
+        def _log_agent_result(result):
+            logger.info(f"\n{'='*40}\nAgent 完成\n{'='*40}")
+            logger.info(f"模式: {result['mode']}  成功: {result['success']}")
+            logger.info(f"工具调用: {len(result.get('tool_calls', []))} 次")
+            for tc in result.get("tool_calls", []):
+                logger.info(f"  - {tc.get('tool_name', tc.get('name', '?'))}: {tc.get('status', '?')}")
+            refl = result.get("reflection", {})
+            logger.info(f"反思综合分: {refl.get('overall_score', '?')}/10  方法: {refl.get('evaluation_method', '?')}")
+            crit = refl.get("llm_critique", {})
+            if crit.get("available"):
+                logger.info(f"LLM 深度 critique: {crit.get('critique', '')[:200]}")
+            for ap in result.get("approvals", []):
+                logger.info(f"审批[{ap.get('step')}] {ap.get('status')} (by {ap.get('approved_by')})")
+
+        llm_client = create_llm_client(wf, config_path=args.llm_config, mode=args.mode)
+        agent = create_llm_agent(wf, mode=args.mode, llm_call=llm_client)
+
+        if args.multi_turn:
+            print("进入多轮对话模式（输入 exit/quit 或空行退出）")
+            problem = args.problem or ""
+            if not problem:
+                try:
+                    problem = input("第1轮 题目/需求: ").strip()
+                except EOFError:
+                    problem = ""
+            turn = 1
+            while problem:
+                result = agent.chat(problem, data_path=args.data_path)
+                _log_agent_result(result)
+                try:
+                    problem = input(f"第{turn + 1}轮 (exit 退出): ").strip()
+                except EOFError:
+                    problem = ""
+                if problem.lower() in ("exit", "quit"):
+                    break
+                turn += 1
+            return
+
         problem = args.problem
         if not problem:
             try:
@@ -543,16 +584,8 @@ def main():
         if not problem:
             logger.error("题目文本不能为空（用 --problem 指定）")
         else:
-            llm_client = create_llm_client(wf, config_path=args.llm_config, mode=args.mode)
-            agent = create_llm_agent(wf, mode=args.mode, llm_call=llm_client)
             result = agent.run(problem, data_path=args.data_path)
-            logger.info(f"\n{'='*40}\nAgent 完成\n{'='*40}")
-            logger.info(f"模式: {result['mode']}  成功: {result['success']}")
-            logger.info(f"工具调用: {len(result.get('tool_calls', []))} 次")
-            for tc in result.get("tool_calls", []):
-                logger.info(f"  - {tc.get('tool_name', tc.get('name', '?'))}: {tc.get('status', '?')}")
-            refl = result.get("reflection", {})
-            logger.info(f"反思评分: {refl.get('score', '?')}/10  状态: {refl.get('status', '?')}")
+            _log_agent_result(result)
         return
     if args.mcp:
         from modules.mcp_server import create_mcp_server
