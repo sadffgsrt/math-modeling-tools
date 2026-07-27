@@ -1,12 +1,13 @@
 ﻿repos:
+  # 版本与 venv 的 ruff 0.16.0 对齐，避免本地钩子与 CI 规则语义不一致
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.1.0
+    rev: v0.16.0
     hooks:
       - id: ruff
         args: [--fix, --ignore, "E501"]
       - id: ruff-format
   - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v1.0
+    rev: v1.11.0
     hooks:
       - id: mypy
         args: [--ignore-missing-imports]

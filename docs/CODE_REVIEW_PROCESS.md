@@ -1,93 +1,145 @@
-# 代码审查流程（CODE REVIEW PROCESS）
+# 代码审查流程 (Code Review Process)
 
-适用仓库：`agent/`
-配套文档：`docs/CODE_REVIEW_STANDARD.md`、`docs/CODE_REVIEW_PROCESS.md`、`.github/PULL_REQUEST_TEMPLATE.md`
+> 配套：`CODE_REVIEW_STANDARD.md`（评什么）、`.github/PULL_REQUEST_TEMPLATE.md`（PR 模板）。
+> 设计原则：辩证方法论指导。主要矛盾是"假门禁 ↔ 真实质量风险"，用统筹兼顾平衡"严格度 ↔ 交付速度"，用渐进硬化替代"一刀切"。
+
+---
+
+## 0. 辩证定位
+
+**矛盾分析**
+- ⭐ 主要矛盾：CI 门禁形同虚设（ruff 默认规则 + 忽略 F401/F811/F841、mypy `|| true`、覆盖率 `fail_under=0`、只跑 3 个测试文件）↔ 真实质量风险。
+- 次要矛盾：质量严格度 ↔ 交付速度；自动门禁 ↔ 人工评审（互补，非对立）。
+
+**统筹兼顾（当前阶段平衡点）**
+- 速度 ↔ 质量：优先让门禁"真实运转"（跑全量测试、ruff 全量报告、mypy 上报），lint 阻断随债务清偿分阶段开启，不立即阻塞日常开发。
+- 严格 ↔ 噪音：启用 BLE / T201 / F401 等规则，但用 Phase 渐进避免一次性数百误报压垮评审。
+- 即时清债 ↔ 渐进：采用渐进 + 持久战，存量债务走技术债清单，新代码零容忍。
+
+---
 
 ## 1. 角色与职责
 
 | 角色 | 职责 |
-| --- | --- |
-| 作者（Author） | 提交前本地自检、填 PR 模板、回应评论、修复 Blocker/Critical |
-| 审查者（Reviewer） | 至少 1 人；按标准逐项评论；拥有合入否决权 |
-| 维护者（Maintainer） | 处理分歧、最终合入、保证主干绿 |
+|------|------|
+| Author（提交者） | 自检通过、填 PR 模板、回应每条评论、不强行合并 |
+| Reviewer（评审者） | 按标准逐条评审、带级别标签、给出方案、在 24h 内首响 |
+| Maintainer（维护者） | 解决分歧、最终批准、守护主干质量闸门 |
 
-小团队约束：作者不得自审自合；至少 1 名独立审查者。
+小项目可由同一人兼 Author / Reviewer，但 `main` 分支合并须有第二人批准（或显式 self-review 记录）。
+
+---
 
 ## 2. 分支与提交规范
 
-- 功能分支：`feat/短描述`、`fix/短描述`、`refactor/短描述`、`docs/短描述`。
-- 禁止直接推 `main`；所有改动走 PR。
-- Commit message 前缀：`feat:` `fix:` `docs:` `refactor:` `test:` `chore:`，后接短句。
-- 一次 PR 对应一个内聚改动，避免"顺手大扫除"混进功能代码。
+- 分支：`feature/<topic>`、`fix/<topic>`、`docs/<topic>`、`refactor/<topic>`；禁止直接推 `main`。
+- 提交：遵循约定式提交前缀 `feat:` / `fix:` / `docs:` / `refactor:` / `test:` / `chore:`。
+- 单次提交聚焦单一关注点；改同批文件用短 message 覆盖长 message（见 AGENTS.md 协作约定）。
+- 每次改动 commit 后 `git push origin main`（沙箱无凭据时由本机执行，见协作约定）。
+
+---
 
 ## 3. PR 规模限制
 
-- 单 PR 建议 < 400 行变更、< 10 个文件。
-- 超过则拆 PR；巨石文件拆分（如 validator/agent）单独成 PR，不与功能改动混。
-- 理由：大 PR 审查质量下降，缺陷逃逸率上升。
+- 单 PR 建议 ≤ 400 行有效改动；超过请拆分。
+- 一个 PR 只解决一个问题（一个 bug、一个特性、一类清理）。
+- 重构与功能改动不混在同一 PR，方便评审与 bisect。
+
+---
 
 ## 4. 评审四阶段
 
-1. **作者自审（提交前）**：跑本地自检清单（第 5 节），确保 ruff/mypy/pytest 绿，填 PR 模板。
-2. **初审（提交后 24h 内）**：审查者看"意图与结构"——是否该做、拆分是否合理、有无 Blocker/Critical。
-3. **深度审（初审通过后）**：逐文件看逻辑、错误处理、测试、安全；按标准贴评论。
-4. **终审与合入**：所有 Blocker/Critical 关闭；Minor/Nit 由作者酌情；维护者合入。
-
-## 5. 本地自检清单（作者提交前必跑）
-
+**阶段一：Author 本地自检（合并前必做）**
+```bash
+# lint（与 CI 一致的规则集，见 Phase 路线图）
+ruff check . --ignore E501
+# 类型
+mypy modules --ignore-missing-imports
+# 全量默认测试套件（legacy 自动跳过，当前基线 313 passed）
+pytest tests/ -o addopts="" -q
 ```
-[ ] ruff check . --ignore E501 无新增 F/B/E 类报错
-[ ] mypy modules 无新增类型错误（除已记录的 # type: ignore）
-[ ] pytest 绿测集（test_workflow/test_model_solving/test_validation）全绿
-[ ] 无新增裸 print()（用 logger 替代）
-[ ] 无新增裸 except: / 无日志的 except Exception
-[ ] 无明文密钥；凭证走 env / 本地 .env
-[ ] 改动关联模块覆盖率不下降
-[ ] 关联文档（标准/流程）如需更新已同步
-```
+全部绿、无新增 §3 红线，才开 PR。
 
-## 6. CI 门禁现状与分阶段硬化路线
+**阶段二：自动门禁（CI）**
+CI 跑：ruff 全量、mypy 上报、全量默认测试套件、覆盖率回归地板。任一阻断项红则 PR 不可合并。
 
-### 6.1 现状（2026-07-27 实测）
+**阶段三：人工评审**
+- 按 `CODE_REVIEW_STANDARD.md` 逐条检查，评论带 `[级别]` 标签。
+- 重点看：设计 / 架构 / 安全 / 测试质量（机器不卡的部分）。
+- 每条 `[BLOCKER]` / `[MAJOR]` 必须被解决或显式达成共识，否则不批准。
 
-| 位置 | 问题 | 后果 |
-| --- | --- | --- |
-| `.pre-commit-config.yaml:3` | ruff 锁 `v0.1.0`，本地 `0.16.0` | 版本错配，pre-commit 可能用错规则或失败 |
-| `pyproject.toml` ruff | ignore `F401/F811/F841` | 未用导入、重复定义、未用变量查不出 |
-| `ci.yml:22` | `mypy ... || true` | 类型错误永不阻塞 |
-| `ci.yml:24` | 只跑 3 个测试文件 + `--cov-fail-under=0` | 大量模块（web_ui/tool_protocol/runner）0% 覆盖也无感知 |
-| 覆盖率基线 | 核心套件 41.5%（pyproject 写 60% 未强制） | 门槛虚设 |
+**阶段四：批准与合并**
+- Maintainer 确认所有 `[BLOCKER]`/`[MAJOR]` 已处理、CI 绿、PR 模板填妥。
+- 合并方式：squash 保持主干线性；合并后删除特性分支。
 
-### 6.2 硬化路线（渐进，不阻塞历史任务）
+---
 
-- **Phase 0（修版本错配）**：`.pre-commit-config.yaml` ruff rev 对齐本地 `0.16.0`；mypy rev 对齐。让本地与 CI 规则一致。
-- **Phase 1（ruff 全量去 ignore）**：从 `pyproject` 移除 `F401/F811/F841` 的 ignore，改为逐文件 `# noqa` 标注原因；CI ruff 加 `--fix` 自动修。
-- **Phase 2（mypy + 测试全量）**：`ci.yml` 去掉 `|| true`，mypy 失败则红；pytest 跑全量默认套件（非 legacy 测试已用 importorskip/密钥守卫，安全）。
-- **Phase 3（覆盖率门槛渐进）**：`--cov-fail-under` 从 40 抬到 50 再到 60，每次只升一档，给历史代码补测缓冲。
+## 5. 本地自检清单（Author 开 PR 前勾选）
 
-Phase 0/1 为低风险，可立即做；Phase 2/3 需配套补测试，按季度推进。
+- [ ] `ruff check . --ignore E501` 无新增错误
+- [ ] `mypy modules` 无新增类型错误
+- [ ] `pytest tests/ -o addopts=""` 全绿（不低于 313 passed 基线）
+- [ ] 无新增 §3 红线（宽异常 / 裸 print / 类型绕过 / 巨石 / 0% 扩大）
+- [ ] 改动的覆盖薄弱模块已补测试
+- [ ] PR 模板已填，含风险与测试说明
 
-## 7. Definition of Done（合入门槛）
+---
 
-- 至少 1 名独立审查者批准。
-- 所有 `[Blocker]` `[Critical]` 已关闭。
-- CI 全绿（对应阶段门禁）。
-- 绿测集无回归。
-- PR 模板填写完整，自查清单勾选。
+## 6. CI 门禁硬化路线图（Phase 0-3）
 
-## 8. SLA（响应时限）
+现状 CI 是假门禁。按"先真实运转、后逐步阻断"推进，避免一次性爆数百误报。
 
-| 事项 | 时限 |
-| --- | --- |
-| 初审 | 提交后 24h 内 |
-| 作者回应评论 | 48h 内 |
-| 终审合入 | 评论关闭后 24h 内 |
+| Phase | 目标 | CI 动作 | 阻断？ | 进入条件 |
+|-------|------|---------|--------|----------|
+| **Phase 0（立即）** | 门禁真实运转 | 跑全量默认测试套件（替代仅 3 文件）；ruff 基础规则全量扫描并阻断；mypy 全量上报（去 `\|\| true`，不阻断）；覆盖率地板 40% | 测试失败阻断；ruff 基础错误阻断；mypy 仅报告 | 无（当前即可做） |
+| **Phase 1** | 机器卡机械错误 | ruff `select` 扩展至 `E,F,W,I,N,B,BLE,T201,SIM,C4,UP,PTH`；移除 `F401/F811/F841` ignore | ruff 阻断（先修存量债务或 per-file 临时豁免） | 存量 F401/F811/F841 清零或受控豁免 |
+| **Phase 2** | 类型可信 | mypy 改为 `continue-on-error: false`（阻断） | mypy 阻断 | 存量类型错误清零 |
+| **Phase 3** | 覆盖率可信 | `fail_under` 由 40% 阶梯提升至 60%（与 pyproject 一致） | 覆盖率阻断 | 核心模块覆盖达 60% |
 
-超时由维护者介入协调。
+每个 Phase 切换前在 PR 中说明，避免暗改门槛。
+
+---
+
+## 7. Definition of Done（合并前提）
+
+- CI 全绿（当前阶段所有阻断项通过）
+- 全部 `[BLOCKER]` / `[MAJOR]` 已处理或达成共识
+- 测试不降于基线（313 passed）、无新增 §3 红线
+- PR 模板完整、commit message 合规
+- 至少一名 Reviewer 批准（或 Maintainer 显式 self-review）
+
+---
+
+## 8. SLA（响应时效）
+
+| 项 | 时限 |
+|----|------|
+| Reviewer 首次响应 | 24 小时内 |
+| Author 回应评论 | 48 小时内 |
+| 阻塞性分歧上报 Maintainer | 24 小时内 |
+
+超时未响应可 @ 提醒；长期无响应由 Maintainer 指派替补。
+
+---
 
 ## 9. 分歧处理
 
-- 审查者与作者就某条评论无法达成一致：先在 PR 评论中具名列出分歧点与各自依据。
-- 仍不一致：升级到维护者裁决；裁决以"标准第几节 + 项目风险"为准，不凭职位。
-- 若分歧源于标准本身模糊：记录到 `对话记录.md`，并在下一轮标准复审中修订。
-- 禁止因分歧而长期挂着 PR 不处理；超过 5 个工作日无进展，维护者强制裁决。
+- 非对抗性分歧（设计取舍等）：在 PR 评论中摆事实、给方案，民主讨论，求同存异。
+- 评审者与被评审者无法达成一致：升级 Maintainer 裁决，裁决记录进 PR。
+- 禁止"为了合并而妥协质量红线"；红线问题只能修，不能让。
+
+---
+
+## 10. 遗留债管理
+
+- 存量债务（83 宽异常、122 裸 print、32 类型绕过、巨石文件、41.5% 覆盖）登记为 `tech-debt` 标签 issue，不在新代码加码。
+- 清债方式：跟随相关模块改动顺手修；或单列 `refactor/` PR 批量修一类。
+- 每清一类，对应 Phase 推进一级，门禁随之硬化。
+
+---
+
+## 11. 与本仓库其他规范的衔接
+
+- 协作约定（AGENTS.md）：commit 后 push、短 message、不碰明文 token。
+- 安全红线与用户指令 #12-#15 一致：密钥只本地 / 环境变量，禁止明文上传。
+- 测试纪律（工作区记忆）：不造假数据、确定性小样本、可选依赖 `importorskip` 守卫。
