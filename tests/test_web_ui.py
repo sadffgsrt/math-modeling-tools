@@ -420,7 +420,8 @@ class TestWebUI(TestCase):
             self.assertIn("feature_importance", plan["requested_types"])
             self.assertEqual(plan["max_charts"], 3)
             self.assertTrue(data["prefs_saved"])
-            import pathlib, json
+            import pathlib
+            import json
             prefs_path = pathlib.Path(server.workflow.results_dir) / "visualization_prefs.json"
             self.assertTrue(prefs_path.exists())
             prefs = json.loads(prefs_path.read_text(encoding="utf-8"))
