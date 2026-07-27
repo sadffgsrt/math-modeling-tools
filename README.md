@@ -3,7 +3,7 @@
 > 面向 CUMCM 全国大学生数学建模竞赛 / 美赛（MCM·ICM）等赛题的建模—求解—论文生成一体化工作流平台。
 
 **版本**: v3.4.2
-**更新时间**: 2026-07-26
+**更新时间**: 2026-07-27
 **适用竞赛**: CUMCM、MCM·ICM、电工杯等
 
 ---
@@ -126,6 +126,8 @@ PYTHONPATH=. python -m pytest tests/test_workflow.py tests/test_model_solving.py
 
 > 说明：`tests/` 中部分文件针对早期架构 API 编写，与当前 API 存在代差，未纳入绿集（运行会失败，属预期，不代表功能缺陷）。需在 Git 中保留这些旧测试以备查证。
 
+全量默认测试套件（CI 实际运行）：完整依赖下基线 **313 passed / 171 skipped / 5 xfailed**。可视化相关 7 项需 `matplotlib`，缺失时降级为失败（属环境缺失，非代码缺陷）。
+
 ---
 
 ## 近期更新（v3.4.2）
@@ -135,8 +137,30 @@ PYTHONPATH=. python -m pytest tests/test_workflow.py tests/test_model_solving.py
 - **收口遗留任务**（提交 `b5f726d`）：logger、技能去重、审查门禁、多视角自审查。
 - **修复 lint**（提交 `68f88c6`）：拆分 HMML 选择器测试中的多行导入，使 CI 通过。
 - **添加建模逻辑说明报告**（提交 `7974dcb`）：`working_logic_report.html` 入库，运行产物 `results/` 纳入 `.gitignore`。
+- **建立代码审查机制**（提交 `dd1ca7c`）：新增 `docs/CODE_REVIEW_STANDARD.md`、`docs/CODE_REVIEW_PROCESS.md`、`.github/PULL_REQUEST_TEMPLATE.md`，定义严重级别、五类检查清单、评审四阶段与 PR 模板。
+- **硬化 CI 门禁**（提交 `1e5ad4d`）：`.github/workflows/ci.yml` 重写，去掉 mypy `|| true`、pytest 改跑全量默认套件、覆盖率 `fail_under` 由 0 提到 40% 并阻断、ruff 全量扫描；`.pre-commit-config.yaml` 对齐 ruff/mypy 版本。门禁进入真实运转，lint 失败会阻断合并。
+- **修复 lint**（提交 `cd4fe04`）：拆分 `test_web_ui.py` 中的多行导入，使 PR #20 的 Lint check 通过。
 
 历史修复（基线 `261b4e4`）：numpy 布尔歧义（AHP / 图论）、DEA 维度错误（CCR 模型），均附回归测试。
+
+---
+
+## 代码审查与 CI
+
+仓库已建立系统化的代码审查机制与真实 CI 门禁，详见：
+
+- `docs/CODE_REVIEW_STANDARD.md`：严重级别（Blocker/Critical/Major/Minor/Nit）、五类检查清单（通用 / Python 专项 / 本项目高风险区 / 安全 / 测试质量）、评论模板、反模式与正例。
+- `docs/CODE_REVIEW_PROCESS.md`：角色职责、分支提交规范、评审四阶段、本地自检清单、CI 分阶段硬化路线（Phase 0-3）、完成定义（DoD）。
+- `.github/PULL_REQUEST_TEMPLATE.md`：PR 必填结构（改动摘要 / 自查清单 / 测试与覆盖率 / 门禁状态 / 审查要点）。
+
+CI（`.github/workflows/ci.yml`）当前门禁：
+
+- **Lint**：`ruff` 全量扫描，失败即阻断合并。
+- **类型**：`mypy` 上报（Phase 0 不阻断，后续阶段升级为阻断）。
+- **测试**：全量默认测试套件（legacy 经 `conftest` 自动跳过），基线 313 passed / 171 skipped / 5 xfailed。
+- **覆盖率**：`fail_under=40%` 且阻断；逐步提升（Phase 2 目标 60%）。
+
+分支策略：功能分支开发，PR 经门禁与人工评审后合入 `main`。
 
 ---
 
