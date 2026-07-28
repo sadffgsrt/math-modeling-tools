@@ -1,0 +1,1103 @@
+{
+  "metadata": {
+    "version": "3.4.2",
+    "description": "数学建模常用模型目录",
+    "last_updated": "2026-06-28"
+  },
+  "models": {
+    "optimization": {
+      "name": "优化类模型",
+      "description": "用于求解最优化问题的模型",
+      "models": [
+        {
+          "id": "linear_programming",
+          "name": "线性规划",
+          "description": "求解线性目标函数在线性约束下的最优解",
+          "applicable_scenarios": [
+            "资源分配",
+            "生产调度",
+            "运输问题"
+          ],
+          "pros": [
+            "求解速度快",
+            "理论成熟",
+            "全局最优"
+          ],
+          "cons": [
+            "只能处理线性问题",
+            "对数据质量要求高"
+          ],
+          "complexity": "low",
+          "python_library": "scipy.optimize.linprog",
+          "implemented": true
+        },
+        {
+          "id": "integer_programming",
+          "name": "整数规划",
+          "description": "决策变量要求为整数的优化问题",
+          "applicable_scenarios": [
+            "选址问题",
+            "排班问题",
+            "投资组合"
+          ],
+          "pros": [
+            "处理离散决策",
+            "结果可解释"
+          ],
+          "cons": [
+            "计算复杂度高",
+            "可能无解"
+          ],
+          "complexity": "medium",
+          "python_library": "pulp / scipy.optimize",
+          "implemented": true
+        },
+        {
+          "id": "dynamic_programming",
+          "name": "动态规划",
+          "description": "将复杂问题分解为子问题求解",
+          "applicable_scenarios": [
+            "最短路径",
+            "背包问题",
+            "序列决策"
+          ],
+          "pros": [
+            "全局最优",
+            "可处理多阶段决策"
+          ],
+          "cons": [
+            "维度灾难",
+            "需要最优子结构"
+          ],
+          "complexity": "medium",
+          "python_library": "自定义实现",
+          "implemented": true
+        },
+        {
+          "id": "simulated_annealing",
+          "name": "模拟退火",
+          "description": "模拟金属退火过程的随机优化算法",
+          "applicable_scenarios": [
+            "组合优化",
+            "大规模问题",
+            "全局优化"
+          ],
+          "pros": [
+            "理论上保证全局最优",
+            "实现简单"
+          ],
+          "cons": [
+            "收敛速度慢",
+            "参数敏感"
+          ],
+          "complexity": "medium",
+          "python_library": "scipy.optimize.dual_annealing",
+          "implemented": true
+        }
+      ]
+    },
+    "optimization_meta": {
+      "name": "元启发式优化模型",
+      "description": "智能优化算法",
+      "models": [
+        {
+          "id": "pso",
+          "name": "粒子群优化",
+          "applicable_scenarios": [
+            "连续优化",
+            "参数优化"
+          ],
+          "pros": [
+            "收敛快",
+            "简单"
+          ],
+          "cons": [
+            "易早熟"
+          ],
+          "complexity": "medium",
+          "python_library": "pyswarm",
+          "implemented": true
+        },
+        {
+          "id": "de",
+          "name": "差分进化",
+          "applicable_scenarios": [
+            "全局优化",
+            "多峰优化"
+          ],
+          "pros": [
+            "鲁棒性强"
+          ],
+          "cons": [
+            "参数多"
+          ],
+          "complexity": "medium",
+          "python_library": "scipy.optimize",
+          "implemented": true
+        },
+        {
+          "id": "abc",
+          "name": "人工蜂群算法",
+          "applicable_scenarios": [
+            "组合优化",
+            "函数优化"
+          ],
+          "pros": [
+            "探索能力强"
+          ],
+          "cons": [
+            "收敛慢"
+          ],
+          "complexity": "high",
+          "python_library": "scikit-opt",
+          "implemented": true
+        },
+        {
+          "id": "genetic_algorithm",
+          "name": "遗传算法",
+          "description": "模拟自然进化过程的启发式算法",
+          "applicable_scenarios": [
+            "组合优化",
+            "复杂非线性问题",
+            "多目标优化"
+          ],
+          "pros": [
+            "全局搜索能力强",
+            "不依赖梯度信息"
+          ],
+          "cons": [
+            "收敛速度慢",
+            "参数敏感"
+          ],
+          "complexity": "medium",
+          "python_library": "deap / pymoo",
+          "implemented": true
+        },
+        {
+          "id": "ant_colony",
+          "name": "蚁群算法",
+          "applicable_scenarios": [
+            "路径优化",
+            "调度问题"
+          ],
+          "pros": [
+            "分布式计算"
+          ],
+          "cons": [
+            "收敛慢"
+          ],
+          "complexity": "high",
+          "python_library": "scikit-opt",
+          "implemented": true
+        }
+      ]
+    },
+    "prediction": {
+      "name": "预测类模型",
+      "description": "用于预测未来趋势或值的模型",
+      "models": [
+        {
+          "id": "grey_prediction",
+          "name": "灰色预测",
+          "description": "基于灰色系统理论的预测方法",
+          "applicable_scenarios": [
+            "小样本预测",
+            "数据不完整",
+            "短期预测"
+          ],
+          "pros": [
+            "样本要求低",
+            "计算简单",
+            "短期精度高"
+          ],
+          "cons": [
+            "长期预测效果差",
+            "只适用于单调序列"
+          ],
+          "complexity": "low",
+          "python_library": "grey_system / 自定义实现",
+          "implemented": true
+        },
+        {
+          "id": "lstm",
+          "name": "LSTM",
+          "description": "长短期记忆网络，适合处理序列数据",
+          "applicable_scenarios": [
+            "时间序列预测",
+            "自然语言处理",
+            "语音识别"
+          ],
+          "pros": [
+            "捕捉长期依赖",
+            "处理变长序列"
+          ],
+          "cons": [
+            "训练时间长",
+            "需要大量数据",
+            "调参困难"
+          ],
+          "complexity": "high",
+          "python_library": "tensorflow.keras / pytorch",
+          "implemented": true
+        },
+        {
+          "id": "prophet",
+          "name": "Prophet",
+          "description": "Facebook开源的时间序列预测工具",
+          "applicable_scenarios": [
+            "商业预测",
+            "季节性数据",
+            "有缺失值的数据"
+          ],
+          "pros": [
+            "自动处理缺失值",
+            "可解释性强",
+            "易于使用"
+          ],
+          "cons": [
+            "对突变不敏感",
+            "只适用于单变量"
+          ],
+          "complexity": "low",
+          "python_library": "prophet",
+          "implemented": true
+        }
+      ]
+    },
+    "time_series": {
+      "name": "时间序列类模型",
+      "description": "用于时间序列分析与预测的模型",
+      "models": [
+        {
+          "id": "arima",
+          "name": "ARIMA",
+          "description": "自回归积分滑动平均模型",
+          "applicable_scenarios": [
+            "时间序列预测",
+            "经济预测",
+            "需求预测"
+          ],
+          "pros": [
+            "理论成熟",
+            "可解释性强",
+            "短期预测准确"
+          ],
+          "cons": [
+            "要求数据平稳",
+            "对突变敏感"
+          ],
+          "complexity": "medium",
+          "python_library": "statsmodels.tsa.arima",
+          "implemented": true
+        }
+      ]
+    },
+    "regression": {
+      "name": "回归类模型",
+      "description": "用于建模变量间依赖关系的回归分析方法",
+      "models": [
+        {
+          "id": "regression",
+          "name": "回归分析",
+          "description": "研究变量间依赖关系的统计方法",
+          "applicable_scenarios": [
+            "关系建模",
+            "预测分析",
+            "因素分析"
+          ],
+          "pros": [
+            "简单直观",
+            "可解释性强"
+          ],
+          "cons": [
+            "要求线性关系",
+            "对异常值敏感"
+          ],
+          "complexity": "low",
+          "python_library": "statsmodels / sklearn.linear_model",
+          "implemented": true
+        },
+        {
+          "id": "ridge",
+          "name": "岭回归",
+          "description": "L2 正则化回归，处理多重共线性",
+          "applicable_scenarios": [
+            "高维回归",
+            "共线性数据"
+          ],
+          "pros": [
+            "缓解过拟合",
+            "稳定数值"
+          ],
+          "cons": [
+            "有偏估计"
+          ],
+          "complexity": "low",
+          "python_library": "sklearn.linear_model",
+          "implemented": true
+        },
+        {
+          "id": "lasso",
+          "name": "Lasso回归",
+          "description": "L1 正则化回归，可实现特征选择",
+          "applicable_scenarios": [
+            "稀疏特征",
+            "特征选择"
+          ],
+          "pros": [
+            "特征选择",
+            "稀疏解"
+          ],
+          "cons": [
+            "对参数敏感"
+          ],
+          "complexity": "low",
+          "python_library": "sklearn.linear_model",
+          "implemented": true
+        },
+        {
+          "id": "svr",
+          "name": "支持向量回归(SVR)",
+          "description": "基于支持向量的非线性回归方法",
+          "applicable_scenarios": [
+            "非线性回归",
+            "小样本"
+          ],
+          "pros": [
+            "泛化好",
+            "核函数灵活"
+          ],
+          "cons": [
+            "大规模数据慢",
+            "参数调优难"
+          ],
+          "complexity": "medium",
+          "python_library": "sklearn.svm",
+          "implemented": true
+        },
+        {
+          "id": "xgboost",
+          "name": "XGBoost",
+          "description": "梯度提升决策树算法",
+          "applicable_scenarios": [
+            "结构化数据预测",
+            "分类问题",
+            "回归问题"
+          ],
+          "pros": [
+            "预测精度高",
+            "训练速度快",
+            "特征重要性分析"
+          ],
+          "cons": [
+            "对数据预处理敏感",
+            "不适用于时序数据"
+          ],
+          "complexity": "medium",
+          "python_library": "xgboost",
+          "implemented": true
+        },
+        {
+          "id": "lightgbm",
+          "name": "LightGBM",
+          "applicable_scenarios": [
+            "大数据",
+            "回归分类"
+          ],
+          "pros": [
+            "速度快",
+            "内存低"
+          ],
+          "cons": [
+            "小数据过拟合"
+          ],
+          "complexity": "medium",
+          "python_library": "lightgbm",
+          "implemented": true
+        },
+        {
+          "id": "catboost",
+          "name": "CatBoost",
+          "applicable_scenarios": [
+            "分类特征",
+            "回归分类"
+          ],
+          "pros": [
+            "处理类别特征"
+          ],
+          "cons": [
+            "训练慢"
+          ],
+          "complexity": "medium",
+          "python_library": "catboost",
+          "implemented": true
+        }
+      ]
+    },
+    "classification": {
+      "name": "分类类模型",
+      "description": "用于将样本划分到预定义类别的模型",
+      "models": [
+        {
+          "id": "logistic_regression",
+          "name": "逻辑回归",
+          "applicable_scenarios": [
+            "二分类"
+          ],
+          "pros": [
+            "可解释"
+          ],
+          "cons": [
+            "线性假设"
+          ],
+          "complexity": "low",
+          "python_library": "sklearn.linear_model",
+          "implemented": true
+        },
+        {
+          "id": "svm",
+          "name": "支持向量机",
+          "applicable_scenarios": [
+            "文本分类"
+          ],
+          "pros": [
+            "泛化强"
+          ],
+          "cons": [
+            "计算大"
+          ],
+          "complexity": "medium",
+          "python_library": "sklearn.svm",
+          "implemented": true
+        },
+        {
+          "id": "decision_tree",
+          "name": "决策树",
+          "applicable_scenarios": [
+            "规则挖掘"
+          ],
+          "pros": [
+            "可解释"
+          ],
+          "cons": [
+            "过拟合"
+          ],
+          "complexity": "low",
+          "python_library": "sklearn.tree",
+          "implemented": true
+        },
+        {
+          "id": "random_forest",
+          "name": "随机森林",
+          "applicable_scenarios": [
+            "分类回归"
+          ],
+          "pros": [
+            "鲁棒"
+          ],
+          "cons": [
+            "计算大"
+          ],
+          "complexity": "medium",
+          "python_library": "sklearn.ensemble",
+          "implemented": true
+        },
+        {
+          "id": "knn",
+          "name": "K近邻(KNN)",
+          "description": "基于最近邻距离的分类与回归方法",
+          "applicable_scenarios": [
+            "分类判别",
+            "模式识别"
+          ],
+          "pros": [
+            "简单直观",
+            "无需训练"
+          ],
+          "cons": [
+            "预测慢",
+            "对尺度敏感"
+          ],
+          "complexity": "low",
+          "python_library": "sklearn.neighbors",
+          "implemented": true
+        }
+      ]
+    },
+    "clustering": {
+      "name": "聚类类模型",
+      "description": "用于无监督地将样本分组的模型",
+      "models": [
+        {
+          "id": "kmeans",
+          "name": "K-means聚类",
+          "applicable_scenarios": [
+            "客户细分"
+          ],
+          "pros": [
+            "快速"
+          ],
+          "cons": [
+            "需指定K"
+          ],
+          "complexity": "low",
+          "python_library": "sklearn.cluster",
+          "implemented": true
+        },
+        {
+          "id": "dbscan",
+          "name": "DBSCAN聚类",
+          "applicable_scenarios": [
+            "异常检测"
+          ],
+          "pros": [
+            "任意形状"
+          ],
+          "cons": [
+            "参数敏感"
+          ],
+          "complexity": "medium",
+          "python_library": "sklearn.cluster",
+          "implemented": true
+        },
+        {
+          "id": "cluster_analysis",
+          "name": "聚类分析",
+          "description": "将数据分组为相似的类别",
+          "applicable_scenarios": [
+            "客户分群",
+            "图像分割",
+            "异常检测"
+          ],
+          "pros": [
+            "无监督学习",
+            "可发现隐藏模式"
+          ],
+          "cons": [
+            "需要预设类别数",
+            "对初始化敏感"
+          ],
+          "complexity": "medium",
+          "python_library": "sklearn.cluster",
+          "implemented": true
+        }
+      ]
+    },
+    "dimension_reduction": {
+      "name": "降维类模型",
+      "description": "用于数据降维和特征提取的方法",
+      "models": [
+        {
+          "id": "pca",
+          "name": "主成分分析(PCA)",
+          "description": "降维和特征提取的方法",
+          "applicable_scenarios": [
+            "数据降维",
+            "特征提取",
+            "可视化"
+          ],
+          "pros": [
+            "减少数据维度",
+            "去除噪声"
+          ],
+          "cons": [
+            "只适用于线性关系",
+            "可解释性降低"
+          ],
+          "complexity": "low",
+          "python_library": "sklearn.decomposition",
+          "implemented": true
+        },
+        {
+          "id": "factor_analysis",
+          "name": "因子分析",
+          "applicable_scenarios": [
+            "降维",
+            "结构分析"
+          ],
+          "pros": [
+            "发现潜在因子"
+          ],
+          "cons": [
+            "因子解释难"
+          ],
+          "complexity": "medium",
+          "python_library": "sklearn.decomposition",
+          "implemented": true
+        }
+      ]
+    },
+    "evaluation": {
+      "name": "评价类模型",
+      "description": "用于综合评价和排序的模型",
+      "models": [
+        {
+          "id": "ahp",
+          "name": "层次分析法(AHP)",
+          "description": "将复杂问题分解为层次结构进行决策",
+          "applicable_scenarios": [
+            "方案选择",
+            "供应商评价",
+            "风险评估"
+          ],
+          "pros": [
+            "简单直观",
+            "可处理定性因素",
+            "一致性检验"
+          ],
+          "cons": [
+            "主观性强",
+            "指标过多时判断困难"
+          ],
+          "complexity": "low",
+          "python_library": "ahpy / 自定义实现",
+          "implemented": true
+        },
+        {
+          "id": "topsis",
+          "name": "TOPSIS",
+          "description": "逼近理想解排序法",
+          "applicable_scenarios": [
+            "多方案排序",
+            "绩效评价",
+            "质量评估"
+          ],
+          "pros": [
+            "客观赋权",
+            "计算简单",
+            "结果可解释"
+          ],
+          "cons": [
+            "对异常值敏感",
+            "不能处理定性指标"
+          ],
+          "complexity": "low",
+          "python_library": "topsis / 自定义实现",
+          "implemented": true
+        },
+        {
+          "id": "entropy_weight",
+          "name": "熵权法",
+          "description": "基于信息熵的客观赋权方法",
+          "applicable_scenarios": [
+            "指标权重确定",
+            "综合评价",
+            "多属性决策"
+          ],
+          "pros": [
+            "完全客观",
+            "不依赖专家意见"
+          ],
+          "cons": [
+            "对数据分布敏感",
+            "不能反映指标重要性"
+          ],
+          "complexity": "low",
+          "python_library": "自定义实现",
+          "implemented": true
+        },
+        {
+          "id": "comprehensive_evaluation",
+          "name": "综合评价",
+          "description": "熵权法赋权 + TOPSIS 排序的组合评价方法",
+          "applicable_scenarios": [
+            "多指标排序",
+            "方案优选"
+          ],
+          "pros": [
+            "主客观结合",
+            "结果全面"
+          ],
+          "cons": [
+            "流程较长"
+          ],
+          "complexity": "medium",
+          "python_library": "自定义实现",
+          "implemented": true
+        },
+        {
+          "id": "grey_relational",
+          "name": "灰色关联分析",
+          "description": "基于灰色系统理论的关联度分析",
+          "applicable_scenarios": [
+            "因素分析",
+            "方案排序",
+            "小样本评价"
+          ],
+          "pros": [
+            "样本要求低",
+            "计算简单",
+            "可处理不确定信息"
+          ],
+          "cons": [
+            "分辨率系数敏感",
+            "只适用于单调序列"
+          ],
+          "complexity": "low",
+          "python_library": "grey_system / 自定义实现",
+          "implemented": true
+        },
+        {
+          "id": "dea",
+          "name": "数据包络分析(DEA)",
+          "description": "评价决策单元相对效率的方法",
+          "applicable_scenarios": [
+            "效率评价",
+            "绩效评估",
+            "资源利用分析"
+          ],
+          "pros": [
+            "不需要假设生产函数",
+            "可处理多输出"
+          ],
+          "cons": [
+            "对样本量敏感",
+            "不能处理负值"
+          ],
+          "complexity": "medium",
+          "python_library": "pyDEA / 自定义实现",
+          "implemented": true
+        },
+        {
+          "id": "fuzzy_evaluation",
+          "name": "模糊综合评价",
+          "applicable_scenarios": [
+            "不确定性评价",
+            "风险评估"
+          ],
+          "pros": [
+            "处理模糊性"
+          ],
+          "cons": [
+            "隶属函数确定难"
+          ],
+          "complexity": "medium",
+          "python_library": "scikit-fuzzy",
+          "implemented": true
+        }
+      ]
+    },
+    "simulation": {
+      "name": "仿真类模型",
+      "description": "用于模拟和仿真复杂系统的模型",
+      "models": [
+        {
+          "id": "monte_carlo",
+          "name": "蒙特卡洛模拟",
+          "description": "基于随机抽样的数值计算方法",
+          "applicable_scenarios": [
+            "风险分析",
+            "概率估计",
+            "积分计算"
+          ],
+          "pros": [
+            "适用于复杂系统",
+            "可处理不确定性"
+          ],
+          "cons": [
+            "计算量大",
+            "收敛速度慢"
+          ],
+          "complexity": "medium",
+          "python_library": "numpy.random / 自定义实现",
+          "implemented": true
+        },
+        {
+          "id": "cellular_automata",
+          "name": "元胞自动机",
+          "description": "基于局部规则模拟全局行为的模型",
+          "applicable_scenarios": [
+            "交通流模拟",
+            "生态系统",
+            "城市扩张"
+          ],
+          "pros": [
+            "直观易懂",
+            "可模拟复杂现象"
+          ],
+          "cons": [
+            "规则设计困难",
+            "计算量大"
+          ],
+          "complexity": "medium",
+          "python_library": "mesa / 自定义实现",
+          "implemented": true
+        },
+        {
+          "id": "queueing_theory",
+          "name": "排队论",
+          "description": "研究排队系统性能的数学理论",
+          "applicable_scenarios": [
+            "服务系统设计",
+            "交通调度",
+            "资源分配"
+          ],
+          "pros": [
+            "理论成熟",
+            "可解析求解"
+          ],
+          "cons": [
+            "假设条件严格",
+            "只适用于简单系统"
+          ],
+          "complexity": "medium",
+          "python_library": "simpy / 自定义实现",
+          "implemented": true
+        },
+        {
+          "id": "game_theory",
+          "name": "博弈论",
+          "description": "研究策略互动的数学理论",
+          "applicable_scenarios": [
+            "竞争策略",
+            "拍卖设计",
+            "谈判分析"
+          ],
+          "pros": [
+            "可分析策略互动",
+            "理论严谨"
+          ],
+          "cons": [
+            "假设理性行为",
+            "计算复杂"
+          ],
+          "complexity": "high",
+          "python_library": "nashpy / 自定义实现",
+          "implemented": true
+        },
+        {
+          "id": "agent_based",
+          "name": "基于智能体建模",
+          "applicable_scenarios": [
+            "社会仿真",
+            "复杂系统"
+          ],
+          "pros": [
+            "模拟个体行为"
+          ],
+          "cons": [
+            "计算量大"
+          ],
+          "complexity": "high",
+          "python_library": "mesa",
+          "implemented": true
+        },
+        {
+          "id": "system_dynamics",
+          "name": "系统动力学",
+          "applicable_scenarios": [
+            "因果分析",
+            "政策仿真"
+          ],
+          "pros": [
+            "反馈分析"
+          ],
+          "cons": [
+            "参数估计难"
+          ],
+          "complexity": "medium",
+          "python_library": "pysd",
+          "implemented": true
+        },
+        {
+          "id": "discrete_event",
+          "name": "离散事件仿真",
+          "applicable_scenarios": [
+            "排队系统",
+            "流程优化"
+          ],
+          "pros": [
+            "模拟真实流程"
+          ],
+          "cons": [
+            "建模复杂"
+          ],
+          "complexity": "medium",
+          "python_library": "simpy",
+          "implemented": true
+        }
+      ]
+    },
+    "statistics": {
+      "name": "统计分析模型",
+      "description": "用于统计分析和假设检验的模型",
+      "models": [
+        {
+          "id": "anova",
+          "name": "方差分析(ANOVA)",
+          "description": "检验多组均值是否存在显著差异",
+          "applicable_scenarios": [
+            "实验设计",
+            "质量控制",
+            "效果比较"
+          ],
+          "pros": [
+            "统计严谨",
+            "可处理多组比较"
+          ],
+          "cons": [
+            "要求正态性和方差齐性"
+          ],
+          "complexity": "low",
+          "python_library": "scipy.stats / statsmodels",
+          "implemented": true
+        },
+        {
+          "id": "exponential_smoothing",
+          "name": "指数平滑",
+          "applicable_scenarios": [
+            "时间序列",
+            "短期预测"
+          ],
+          "pros": [
+            "简单有效"
+          ],
+          "cons": [
+            "长期预测差"
+          ],
+          "complexity": "low",
+          "python_library": "statsmodels",
+          "implemented": true
+        }
+      ]
+    },
+    "neural_networks": {
+      "name": "神经网络类模型",
+      "description": "基于人工神经网络的模型，适合复杂非线性问题",
+      "models": [
+        {
+          "id": "mlp",
+          "name": "多层感知机",
+          "applicable_scenarios": [
+            "函数逼近"
+          ],
+          "pros": [
+            "拟合强"
+          ],
+          "cons": [
+            "需数据"
+          ],
+          "complexity": "medium",
+          "python_library": "sklearn.neural_network",
+          "implemented": true
+        },
+        {
+          "id": "cnn",
+          "name": "卷积神经网络",
+          "applicable_scenarios": [
+            "图像处理"
+          ],
+          "pros": [
+            "特征提取"
+          ],
+          "cons": [
+            "计算大"
+          ],
+          "complexity": "high",
+          "python_library": "tensorflow",
+          "implemented": true
+        },
+        {
+          "id": "neural_network",
+          "name": "神经网络",
+          "description": "模拟人脑神经元结构的机器学习模型",
+          "applicable_scenarios": [
+            "复杂非线性问题",
+            "模式识别",
+            "图像处理"
+          ],
+          "pros": [
+            "拟合能力强",
+            "可处理高维数据"
+          ],
+          "cons": [
+            "需要大量数据",
+            "黑箱模型",
+            "过拟合风险"
+          ],
+          "complexity": "high",
+          "python_library": "tensorflow / pytorch / sklearn.neural_network",
+          "implemented": true
+        }
+      ]
+    },
+    "graph_theory": {
+      "name": "图论类模型",
+      "description": "用于求解网络与图结构相关问题的模型",
+      "models": [
+        {
+          "id": "dijkstra",
+          "name": "Dijkstra算法",
+          "applicable_scenarios": [
+            "路径规划"
+          ],
+          "pros": [
+            "最优"
+          ],
+          "cons": [
+            "无负权"
+          ],
+          "complexity": "low",
+          "python_library": "networkx",
+          "implemented": true
+        },
+        {
+          "id": "max_flow",
+          "name": "最大流算法",
+          "applicable_scenarios": [
+            "网络规划"
+          ],
+          "pros": [
+            "成熟"
+          ],
+          "cons": [
+            "建模复杂"
+          ],
+          "complexity": "medium",
+          "python_library": "networkx",
+          "implemented": true
+        }
+      ]
+    },
+    "fuzzy_logic": {
+      "name": "模糊逻辑类模型",
+      "description": "处理不确定性和模糊性",
+      "models": [
+        {
+          "id": "fuzzy_inference",
+          "name": "模糊推理系统",
+          "applicable_scenarios": [
+            "控制",
+            "决策"
+          ],
+          "pros": [
+            "处理模糊性"
+          ],
+          "cons": [
+            "规则设计难"
+          ],
+          "complexity": "medium",
+          "python_library": "scikit-fuzzy",
+          "implemented": true
+        },
+        {
+          "id": "fuzzy_clustering",
+          "name": "模糊聚类",
+          "applicable_scenarios": [
+            "模式识别",
+            "图像处理"
+          ],
+          "pros": [
+            "软聚类"
+          ],
+          "cons": [
+            "参数敏感"
+          ],
+          "complexity": "medium",
+          "python_library": "scikit-fuzzy",
+          "implemented": true
+        }
+      ]
+    }
+  }
+}

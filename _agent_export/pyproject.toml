@@ -1,0 +1,86 @@
+[build-system]
+requires = ["setuptools>=68.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "math-modeling-workflow"
+version = "3.4.2"
+description = "数学建模竞赛自动化工作流框架 - LLM驱动的Agent流水线"
+readme = "README.md"
+requires-python = ">=3.10"
+license = "MIT"
+authors = [
+    {name = "AI 辅助系统"},
+]
+
+dependencies = [
+    "pandas>=1.5.0", "numpy>=1.23.0", "openpyxl>=3.0.10",
+    "scikit-learn>=1.1.0", "scipy>=1.9.0", "statsmodels>=0.13.0",
+    "matplotlib>=3.6.0", "PyPDF2>=3.0.0", "python-docx>=0.8.11", "PyYAML>=6.0",
+    "openai>=1.0.0",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=7.0", "pytest-cov>=4.0", "ruff>=0.1.0", "mypy>=1.0"]
+advanced = ["xgboost>=1.6.0", "lightgbm>=3.3.0", "plotly>=5.10.0", "seaborn>=0.12.0"]
+# 完整模型支持：model_catalog.json 中标记 implemented=true 但超出核心依赖的第三方库。
+# 未安装时 model_factory 会优雅降级（如 LSTM 退回线性趋势、图论提示缺 networkx）。
+models-extra = [
+    "pulp>=2.7.0",          # 线性/整数规划（linear_programming / 部分 optimization）
+    "pyswarm>=1.2.0",       # 粒子群 PSO
+    "scikit-opt>=0.15.0",   # 差分进化 DE / GA 等元启发式
+    "deap>=1.4.0",          # 遗传算法 GA / 差分进化 DE
+    "pymoo>=0.6.0",         # 多目标优化
+    "tensorflow>=2.15.0",   # LSTM / CNN / 神经网络
+    "torch>=2.2.0",         # 神经网络（tensorflow 的替代）
+    "prophet>=1.1.0",       # Prophet 时间序列预测
+    "xgboost>=1.6.0",       # XGBoost 回归/分类
+    "lightgbm>=3.3.0",      # LightGBM 回归/分类
+    "catboost>=1.2.0",      # CatBoost 回归/分类
+    "ahpy>=1.0.0",          # AHP 层次分析法
+    "scikit-fuzzy>=0.4.0",  # 模糊逻辑 fuzzy_logic
+    "networkx>=3.1.0",      # 图论 graph_theory
+    "mesa>=2.1.0",          # 多智能体仿真 Agent-based simulation
+    "simpy>=4.0.0",         # 离散事件仿真 / 排队论
+    "nashpy>=0.0.40",       # 博弈论 Nash 均衡
+    "pysd>=3.0.0",          # 系统动力学
+]
+all = ["math-modeling-workflow[dev,advanced,models-extra]"]
+
+[tool.ruff]
+target-version = "py310"
+line-length = 120
+indent-width = 4
+
+[tool.ruff.lint]
+select = ["E", "F", "W"]
+# 忽略不影响运行的风格/冗余类告警（历史恢复版遗留，量大）
+ignore = ["E501", "E402", "F401", "F811", "F841", "F541"]
+# 测试文件中允许延迟导入（importorskip 等）与重定义
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["E402", "F811"]
+
+[tool.ruff.format]
+quote-style = "double"
+
+[tool.mypy]
+python_version = "3.10"
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-v --tb=short --cov=modules --cov-report=term-missing"
+filterwarnings = [
+    "ignore::UserWarning",
+    "ignore::DeprecationWarning",
+]
+
+[tool.coverage.report]
+fail_under = 60
+show_missing = true
+skip_empty = true
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["modules*"]
+exclude = ["tests*", "benchmarks*"]

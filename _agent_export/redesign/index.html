@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta name="description" content="数学建模竞赛工作流控制台：七阶段流水线、模型目录、题目分析、数据上传、可视化与结果管理">
+    <title>数学建模竞赛工作流 · 控制台</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body data-theme="light">
+    <a class="skip-link" href="#main">跳到主内容</a>
+    <header class="topbar">
+        <button class="icon-btn menu-toggle" id="menuToggle" aria-label="切换导航菜单" aria-expanded="false" aria-controls="sidebar">
+            <svg class="ic" viewBox="0 0 24 24"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
+        </button>
+        <div class="brand">
+            <span class="brand-mark" aria-hidden="true">∑</span>
+            <span class="brand-text">数学建模工作流</span>
+        </div>
+        <div class="topbar-search" role="search">
+            <svg class="ic" viewBox="0 0 24 24" style="width:18px;height:18px"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+            <input type="text" id="globalSearch" placeholder="搜索模型 / 阶段…" aria-label="全局搜索">
+        </div>
+        <div class="topbar-right">
+            <span class="conn" id="connStatus" title="服务连接状态"><span class="dot"></span><span class="conn-text">连接中…</span></span>
+            <span class="badge" id="verBadge">v—</span>
+            <button class="icon-btn" id="themeToggle" aria-label="切换深色 / 浅色主题" title="切换主题">
+                <svg class="ic" viewBox="0 0 24 24"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>
+            </button>
+            <button class="icon-btn" id="settingsBtn" aria-label="设置" title="设置">
+                <svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.9.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.9 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.9.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.9-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.9V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>
+            </button>
+        </div>
+    </header>
+
+    <div class="layout">
+        <nav class="sidebar" id="sidebar" aria-label="主导航">
+            <div class="side-title">建模流水线</div>
+            <div id="stageNav"></div>
+            <div class="side-title">资源</div>
+            <div class="side-link" data-view="catalog"><svg class="ic" viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg><span>模型目录</span></div>
+            <div class="side-link" data-view="analyze"><svg class="ic" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg><span>题目分析</span></div>
+            <div class="side-link" data-view="upload"><svg class="ic" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M17 8l-5-5-5 5"/><path d="M12 3v12"/></svg><span>数据上传</span></div>
+            <div class="side-link" data-view="visualize"><svg class="ic" viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg><span>可视化</span></div>
+            <div class="side-link" data-view="results"><svg class="ic" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg><span>结果</span></div>
+            <div class="side-link" data-view="gallery"><svg class="ic" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-5-5L5 21"/></svg><span>画廊</span></div>
+        </nav>
+
+        <main class="content" id="main" tabindex="-1">
+            <div id="view" class="view"></div>
+        </main>
+    </div>
+
+    <div class="drawer-mask" id="drawerMask"></div>
+    <aside class="drawer" id="drawer" role="dialog" aria-modal="true" aria-label="模型详情">
+        <div id="drawerInner"></div>
+    </aside>
+
+    <div class="toast-wrap" id="toastWrap" aria-live="polite" aria-atomic="false"></div>
+
+    <div class="modal-mask" id="settingsModal" hidden>
+        <div class="modal" role="dialog" aria-modal="true" aria-label="设置">
+            <h2 class="modal-title">设置</h2>
+            <label class="field">
+                <span class="field-label">API Key（若服务端启用鉴权）</span>
+                <input type="text" id="apiKeyInput" placeholder="留空表示无需鉴权" autocomplete="off" spellcheck="false">
+            </label>
+            <p class="hint">API Key 仅保存在本机浏览器 localStorage，不会上传到服务器以外的地方。</p>
+            <div class="modal-actions">
+                <button class="btn ghost" id="settingsClose" type="button">关闭</button>
+                <button class="btn primary" id="settingsSave" type="button">保存</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="/static/app.js"></script>
+</body>
+</html>
