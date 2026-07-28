@@ -3,7 +3,7 @@
 > 面向 CUMCM 全国大学生数学建模竞赛 / 美赛（MCM·ICM）等赛题的建模—求解—论文生成一体化工作流平台。
 
 **版本**: v3.4.2
-**更新时间**: 2026-07-27
+**更新时间**: 2026-07-28
 **适用竞赛**: CUMCM、MCM·ICM、电工杯等
 
 ---
@@ -19,6 +19,8 @@
 ```text
 agent/
 ├── main.py                      # 主控脚本（薄编排层）
+├── desktop_app.py               # 桌面应用打包入口（PyInstaller）
+├── MathModelingDesktop.spec     # PyInstaller 打包规范
 ├── modules/                     # 13 个功能子包
 │   ├── approval/                # 异步审批（风险分级）
 │   ├── core/                    # 缓存、工具、接口协议
@@ -140,6 +142,8 @@ PYTHONPATH=. python -m pytest tests/test_workflow.py tests/test_model_solving.py
 - **建立代码审查机制**（提交 `dd1ca7c`）：新增 `docs/CODE_REVIEW_STANDARD.md`、`docs/CODE_REVIEW_PROCESS.md`、`.github/PULL_REQUEST_TEMPLATE.md`，定义严重级别、五类检查清单、评审四阶段与 PR 模板。
 - **硬化 CI 门禁**（提交 `1e5ad4d`）：`.github/workflows/ci.yml` 重写，去掉 mypy `|| true`、pytest 改跑全量默认套件、覆盖率 `fail_under` 由 0 提到 40% 并阻断、ruff 全量扫描；`.pre-commit-config.yaml` 对齐 ruff/mypy 版本。门禁进入真实运转，lint 失败会阻断合并。
 - **修复 lint**（提交 `cd4fe04`）：拆分 `test_web_ui.py` 中的多行导入，使 PR #20 的 Lint check 通过。
+- **WebUI SPA 重设计**（提交 `2a4a460`）：`modules/web_ui/server.py` 的内嵌前端升级为零依赖 SPA，引入设计令牌（CSS 变量）、侧栏流水线导航、模型详情抽屉、进度环；前端三常量 `INDEX_HTML` / `STYLE_CSS` / `APP_JS` 随 PyInstaller 打包（不依赖外部 `web/` 目录）。设计稿见 `redesign/UI_DESIGN_SCHEME.md`、交互原型见 `redesign/ui-redesign-preview.html`。
+- **纳入桌面应用打包入口与导出配置**（提交 `5d4dca6`）：根目录新增 `desktop_app.py` 与 `MathModelingDesktop.spec`（PyInstaller 打包规范）；`_agent_export/` 纳入导出专属文档、`config/`（53 模型目录 / HMML 方法库 / LLM 配置）、CI 与 PR 模板、CHANGELOG / CONTRIBUTING / LICENSE，并排除与主仓库重复的 `modules/` `tests/` 源码副本。
 
 历史修复（基线 `261b4e4`）：numpy 布尔歧义（AHP / 图论）、DEA 维度错误（CCR 模型），均附回归测试。
 
