@@ -138,6 +138,20 @@ class TestWebUI(TestCase):
         finally:
             server.stop()
 
+    def test_spa_hash_and_direct_view_routes(self):
+        """哈希路由和直接打开视图链接都应返回 SPA 首页。"""
+        server = self._make_server()
+        server.start_background()
+        try:
+            for path in ("/#catalog", "/%23catalog", "/catalog"):
+                status, body, ctype = self._http_get_raw(server, path)
+                self.assertEqual(status, 200)
+                self.assertIn("text/html", ctype)
+                self.assertIn(b"<html", body)
+                self.assertIn(b"/static/app.js", body)
+        finally:
+            server.stop()
+
     def test_api_status(self):
         """3. GET /api/status"""
         server = self._make_server()
